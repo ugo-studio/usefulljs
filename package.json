@@ -1,0 +1,34 @@
+{
+  "name": "streamline.js",
+  "version": "1.0.0",
+  "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --module esnext --outDir dist/esm && tsc -p tsconfig.json --module commonjs --outDir dist/cjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "async",
+    "asynchronous",
+    "utility",
+    "streamline"
+  ],
+  "author": "ugo-studio",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist"
+  ]
+}
