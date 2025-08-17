@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --module esnext --outDir dist/esm && tsc -p tsconfig.json --module commonjs --outDir dist/cjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --module esnext --outDir dist/esm && tsc --module commonjs --outDir dist/cjs",
+    "test": "bun test"
   },
   "keywords": [
     "async",
@@ -22,10 +22,19 @@
     "utility",
     "streamline"
   ],
-  "author": "ugo-studio",
-  "license": "ISC",
+  "homepage": "https://github.com/ugo-studio/streamline.js/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ugo-studio/streamline.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ugo-studio/streamline.js/issues"
+  },
+  "author": "Ugochukwu David",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "bun-types": "^1.2.20",
     "typescript": "^5.9.2"
   },
   "files": [
