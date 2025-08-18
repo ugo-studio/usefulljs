@@ -168,7 +168,7 @@ console.log(result); // { category: 'A', price: 10 }
 
 ### Cryptography
 
-Provides a set of functions for secure data handling.
+Provides a set of functions for secure data handling using the Web Crypto API.
 
 #### `encryptString(plaintext, secretKey, [ttl])`
 
@@ -176,7 +176,8 @@ Encrypts a string using AES-256-GCM and embeds a Time-To-Live (TTL).
 
 -   **`plaintext`**: `string` - The string to encrypt.
 -   **`secretKey`**: `string` - The secret key for encryption.
--   **`ttl`** (optional): `number` (default: `3600000`ms, 1 hour) - The validity period in milliseconds.
+-   **`ttl`** (optional): `number | null` (default: `3600000`ms, 1 hour) - The validity period in milliseconds. Pass `null` to disable expiration.
+-   **Throws**: `CryptoError` if the environment is unsupported or encryption fails.
 
 **Example:**
 
@@ -184,7 +185,10 @@ Encrypts a string using AES-256-GCM and embeds a Time-To-Live (TTL).
 import { encryptString } from '@ugo-code/streamline.js';
 
 const secret = 'my-super-secret-key';
-const encrypted = await encryptString('Hello, World!', secret, 5000); // Expires in 5 seconds
+// Encrypt with a 5-second TTL
+const encrypted = await encryptString('Hello, World!', secret, 5000); 
+// Encrypt without an expiration
+const permanent = await encryptString('This will not expire', secret, null);
 ```
 
 #### `decryptString(encryptedData, secretKey)`
@@ -193,6 +197,7 @@ Decrypts a string encrypted with `encryptString`, verifying its TTL.
 
 -   **`encryptedData`**: `string` - The Base64 encoded string from `encryptString`.
 -   **`secretKey`**: `string` - The same secret key used for encryption.
+-   **Throws**: `CryptoError` with specific codes for different failure reasons.
 
 **Example:**
 
@@ -203,7 +208,7 @@ import { decryptString } from '@ugo-code/streamline.js';
 const decrypted = await decryptString(encrypted, secret);
 console.log(decrypted); // "Hello, World!"
 
-// After 5 seconds, this would throw an error.
+// After 5 seconds, this would throw a CryptoError.
 ```
 
 #### `hashObject(obj)`
@@ -224,6 +229,33 @@ const hash1 = await hashObject(obj1);
 const hash2 = await hashObject(obj2);
 
 console.log(hash1 === hash2); // true
+```
+
+#### Error Handling
+
+The cryptography functions throw a `CryptoError` for specific, catchable failures.
+
+-   **`CryptoError.code`**: A machine-readable error code.
+    -   `UNSUPPORTED_ENVIRONMENT`: The Web Crypto API is not available.
+    -   `ENCRYPTION_FAILED`: The encryption process failed.
+    -   `DECRYPTION_FAILED`: Decryption failed, likely due to a wrong key or tampered data.
+    -   `INVALID_DATA`: The encrypted payload is malformed.
+    -   `EXPIRED`: The data's TTL has passed.
+
+**Example of handling a `CryptoError`:**
+
+```ts
+import { decryptString, CryptoError } from '@ugo-code/streamline.js';
+
+try {
+    const decrypted = await decryptString(expiredData, secret);
+} catch (error) {
+    if (error instanceof CryptoError && error.code === 'EXPIRED') {
+        console.error('The data has expired!');
+    } else {
+        console.error('An unexpected error occurred:', error);
+    }
+}
 ```
 
 ## Contributing
