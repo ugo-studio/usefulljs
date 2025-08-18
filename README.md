@@ -67,7 +67,7 @@ Ensures that an asynchronous task is only executed once at a time for a given un
 <summary>Example</summary>
 
 ```ts
-import { ensureSingleExecution } from '@ugo-code/streamline.js';
+import { ensureSingleExecution } from '@ugo-code/streamline.js/ensureSingleExecution';
 
 async function fetchUser(userId: string) {
   return ensureSingleExecution(
@@ -103,7 +103,7 @@ Executes an asynchronous task and automatically retries it with an exponential b
 <summary>Example</summary>
 
 ```ts
-import { retry } from '@ugo-code/streamline.js';
+import { retry } from '@ugo-code/streamline.js/retry';
 
 let attempt = 0;
 async function fetchUnreliableData() {
@@ -138,7 +138,7 @@ An extended `Array` class with convenient getters and powerful utility methods.
 <summary>Creating an `ArraySL` instance</summary>
 
 ```ts
-import { ArraySL } from '@ugo-code/streamline.js';
+import { ArraySL } from '@ugo-code/streamline.js/array';
 
 const numbers = new ArraySL([1, 2, 3, 4, 5]);
 ```
@@ -172,7 +172,7 @@ console.log(arr.last);  // 30
 <summary>Method Chaining Example</summary>
 
 ```ts
-import { ArraySL } from '@ugo-code/streamline.js';
+import { ArraySL } from '@ugo-code/streamline.js/array';
 
 const products = new ArraySL([
   { category: 'A', price: 10 },
@@ -211,7 +211,7 @@ Encrypts a string using AES-256-GCM and embeds a Time-To-Live (TTL).
 <summary>Example</summary>
 
 ```ts
-import { encryptString } from '@ugo-code/streamline.js';
+import { encryptString } from '@ugo-code/streamline.js/cryptography';
 
 const secret = 'my-super-secret-key';
 // Encrypt with a 5-second TTL
@@ -234,7 +234,7 @@ Decrypts a string encrypted with `encryptString`, verifying its TTL.
 <summary>Example</summary>
 
 ```ts
-import { decryptString } from '@ugo-code/streamline.js';
+import { decryptString } from '@ugo-code/streamline.js/cryptography';
 
 // Assuming 'encrypted' is from the previous example
 const decrypted = await decryptString(encrypted, secret);
@@ -255,7 +255,7 @@ Calculates a deterministic SHA-256 hash of a JavaScript object or string.
 <summary>Example</summary>
 
 ```ts
-import { hashObject } from '@ugo-code/streamline.js';
+import { hashObject } from '@ugo-code/streamline.js/cryptography';
 
 const obj1 = { a: 1, b: 2 };
 const obj2 = { b: 2, a: 1 }; // Same as obj1, different key order
@@ -283,7 +283,7 @@ The cryptography functions throw a `CryptoError` for specific, catchable failure
 <summary>Example of handling a `CryptoError`</summary>
 
 ```ts
-import { decryptString, CryptoError } from '@ugo-code/streamline.js';
+import { decryptString, CryptoError } from '@ugo-code/streamline.js/cryptography';
 
 try {
     const decrypted = await decryptString(expiredData, secret);

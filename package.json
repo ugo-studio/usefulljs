@@ -10,10 +10,27 @@
     ".": {
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./array": {
+      "import": "./dist/esm/array.js",
+      "require": "./dist/cjs/array.js"
+    },
+    "./cryptography": {
+      "import": "./dist/esm/cryptography.js",
+      "require": "./dist/cjs/cryptography.js"
+    },
+    "./ensureSingleExecution": {
+      "import": "./dist/esm/ensureSingleExecution.js",
+      "require": "./dist/cjs/ensureSingleExecution.js"
+    },
+    "./retry": {
+      "import": "./dist/esm/retry.js",
+      "require": "./dist/cjs/retry.js"
     }
   },
   "scripts": {
-    "build": "tsc --module esnext --outDir dist/esm && tsc --module commonjs --outDir dist/cjs",
+    "prepublishOnly": "npm run build",
+    "build": "node scripts/generate-exports.js && tsc --module esnext --outDir dist/esm && tsc --module commonjs --outDir dist/cjs",
     "test": "bun test",
     "pub": "bun run build && npm publish --access=public"
   },
