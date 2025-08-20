@@ -73,9 +73,11 @@ function ensureWebCryptoAvailable(): void {
 export async function encryptString(
   plaintext: string,
   secretKey: string,
-  ttl: number | null = DEFAULT_TTL_MS,
+  options: { ttl?: number | null } = {},
 ): Promise<string> {
   ensureWebCryptoAvailable();
+
+  const { ttl = DEFAULT_TTL_MS } = options;
 
   try {
     // 1. Calculate the expiration timestamp. Use Infinity for a null TTL.
@@ -156,10 +158,19 @@ export async function decryptString(
 ): Promise<string> {
   ensureWebCryptoAvailable();
 
-  const combinedDataBuffer = base64ToArrayBuffer(
-    decodeURIComponent(encryptedDataB64),
-  );
-  const combinedData = new Uint8Array(combinedDataBuffer);
+  let combinedData: Uint8Array;
+  try {
+    const combinedDataBuffer = base64ToArrayBuffer(
+      decodeURIComponent(encryptedDataB64),
+    );
+    combinedData = new Uint8Array(combinedDataBuffer);
+  } catch (error: any) {
+    throw new CryptoError(
+      "INVALID_DATA",
+      "Invalid encrypted data: failed to decode base64 payload.",
+      error,
+    );
+  }
 
   const minLength = EXPIRATION_LENGTH_BYTES + SALT_LENGTH_BYTES +
     IV_LENGTH_BYTES;
@@ -187,9 +198,9 @@ export async function decryptString(
   const ivOffset = saltOffset + SALT_LENGTH_BYTES;
   const ciphertextOffset = ivOffset + IV_LENGTH_BYTES;
 
-  const salt = combinedData.subarray(saltOffset, ivOffset);
-  const iv = combinedData.subarray(ivOffset, ciphertextOffset);
-  const ciphertext = combinedData.subarray(ciphertextOffset);
+  const salt = combinedData.subarray(saltOffset, ivOffset) as BufferSource;
+  const iv = combinedData.subarray(ivOffset, ciphertextOffset) as BufferSource;
+  const ciphertext = combinedData.subarray(ciphertextOffset) as BufferSource;
 
   // 3. Derive the decryption key.
   const passwordKeyMaterial = await crypto.subtle.importKey(
@@ -202,7 +213,7 @@ export async function decryptString(
   const derivedDecryptionKey = await crypto.subtle.deriveKey(
     {
       name: KEY_DERIVATION_ALGORITHM,
-      salt,
+      salt: salt,
       iterations: PBKDF2_ITERATIONS,
       hash: PBKDF2_HASH,
     },
@@ -215,7 +226,7 @@ export async function decryptString(
   try {
     // 4. Decrypt the ciphertext.
     const decryptedBuffer = await crypto.subtle.decrypt(
-      { name: ALGORITHM_NAME, iv },
+      { name: ALGORITHM_NAME, iv: iv },
       derivedDecryptionKey,
       ciphertext,
     );
@@ -265,8 +276,8 @@ const sortObject = (obj: any): any => {
  * @param obj The object to hash. This can be any serializable JavaScript object.
  * @returns A promise that resolves to a string containing the hexadecimal representation of the SHA-256 hash.
  */
-export async function hashObject(obj: string | object): Promise<string> {
-  const sortedObj = typeof obj === "string" ? obj : sortObject(obj);
+export async function hashObject(obj: any): Promise<string> {
+  const sortedObj = typeof obj === "object" ? sortObject(obj) : obj;
   const objectString = JSON.stringify(sortedObj);
 
   // Use the Web Crypto API in browsers

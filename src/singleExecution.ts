@@ -61,7 +61,7 @@ const activeRequests = new Map<string, Promise<unknown>>();
  * // Example 1: Basic deduplication with a string key
  * async function fetchUser(userId: string) {
  *   // This function will only be executed once, even if called multiple times in parallel.
- *   return ensureSingleExecution(
+ *   return singleExecution(
  *     () => {
  *       console.log(`Fetching user ${userId}...`);
  *       return api.fetch(`/users/${userId}`);
@@ -74,18 +74,18 @@ const activeRequests = new Map<string, Promise<unknown>>();
  *
  * // Example 2: Using an object as a key
  * async function searchProducts(filters: object) {
- *   return ensureSingleExecution(
+ *   return singleExecution(
  *     () => api.post('/products/search', filters),
  *     filters // The filters object is hashed to create a unique key
  *   );
  * }
  *
  * // Example 3: No key provided (hashes the function's source)
- * const fetchConfig = () => ensureSingleExecution(() => api.fetch('/config'));
+ * const fetchConfig = () => singleExecution(() => api.fetch('/config'));
  * Promise.all([fetchConfig(), fetchConfig()]); // The config is fetched only once.
  * ```
  */
-export async function ensureSingleExecution<TResult>(
+export async function singleExecution<TResult>(
     taskFn: () => Promise<TResult>,
     key?: SerializableKey,
 ): Promise<TResult> {

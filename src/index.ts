@@ -1,13 +1,13 @@
 import * as array from "./array";
-import * as cryptography from "./cryptography";
-import * as ensureSingleExecution from "./ensureSingleExecution";
+import * as crypto from "./crypto";
 import * as retry from "./retry";
+import { singleExecution } from "./singleExecution";
 
 export default {
-  ensureSingleExecution,
+  singleExecution,
   retry,
   array,
-  cryptography,
+  crypto,
 };
 
-export { array, cryptography, ensureSingleExecution, retry };
+export { array, crypto, retry, singleExecution };

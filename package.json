@@ -1,6 +1,6 @@
 {
   "name": "@ugo-code/streamline.js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -15,17 +15,17 @@
       "import": "./dist/esm/array.js",
       "require": "./dist/cjs/array.js"
     },
-    "./cryptography": {
-      "import": "./dist/esm/cryptography.js",
-      "require": "./dist/cjs/cryptography.js"
-    },
-    "./ensureSingleExecution": {
-      "import": "./dist/esm/ensureSingleExecution.js",
-      "require": "./dist/cjs/ensureSingleExecution.js"
+    "./crypto": {
+      "import": "./dist/esm/crypto.js",
+      "require": "./dist/cjs/crypto.js"
     },
     "./retry": {
       "import": "./dist/esm/retry.js",
       "require": "./dist/cjs/retry.js"
+    },
+    "./singleExecution": {
+      "import": "./dist/esm/singleExecution.js",
+      "require": "./dist/cjs/singleExecution.js"
     }
   },
   "scripts": {
@@ -38,7 +38,10 @@
     "async",
     "asynchronous",
     "utility",
-    "streamline"
+    "streamline",
+    "array",
+    "encrypt",
+    "decrypt"
   ],
   "homepage": "https://github.com/ugo-studio/streamline.js/",
   "repository": {
