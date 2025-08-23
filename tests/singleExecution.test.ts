@@ -1,10 +1,12 @@
-import { expect, mock, test, describe } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { singleExecution } from "../src/singleExecution";
 
 describe("singleExecution", () => {
     test("should only execute a task once with the same string key", async () => {
-        const task = mock(() => new Promise((resolve) => setTimeout(() => resolve("result"), 50)));
+        const task = mock(() =>
+            new Promise((resolve) => setTimeout(() => resolve("result"), 50))
+        );
         const key = "unique-key";
 
         const [result1, result2] = await Promise.all([
@@ -18,7 +20,9 @@ describe("singleExecution", () => {
     });
 
     test("should execute a task again after the first one completes", async () => {
-        const task = mock(() => new Promise((resolve) => setTimeout(() => resolve("result"), 50)));
+        const task = mock(() =>
+            new Promise((resolve) => setTimeout(() => resolve("result"), 50))
+        );
         const key = "another-key";
 
         await singleExecution(task, key);
@@ -28,7 +32,9 @@ describe("singleExecution", () => {
     });
 
     test("should handle different key types and values", async () => {
-        const task = mock(() => new Promise((resolve) => setTimeout(() => resolve("result"), 50)));
+        const task = mock(() =>
+            new Promise((resolve) => setTimeout(() => resolve("result"), 50))
+        );
 
         // Object keys
         await Promise.all([
@@ -50,20 +56,28 @@ describe("singleExecution", () => {
 
     test("should re-throw errors and clear the lock", async () => {
         const error = new Error("Task failed");
-        const failingTask = mock(() => new Promise((_, reject) => setTimeout(() => reject(error), 50)));
+        const failingTask = mock(() =>
+            new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        );
         const key = "failing-key";
 
         // First call should reject
-        await expect(singleExecution(failingTask, key)).rejects.toThrow("Task failed");
+        await expect(singleExecution(failingTask, key)).rejects.toThrow(
+            "Task failed",
+        );
         expect(failingTask).toHaveBeenCalledTimes(1);
 
         // Second call should re-execute and also reject
-        await expect(singleExecution(failingTask, key)).rejects.toThrow("Task failed");
+        await expect(singleExecution(failingTask, key)).rejects.toThrow(
+            "Task failed",
+        );
         expect(failingTask).toHaveBeenCalledTimes(2);
     });
 
     test("should deduplicate based on function source when no key is provided", async () => {
-        const task = mock(() => new Promise((resolve) => setTimeout(() => resolve("result"), 50)));
+        const task = mock(() =>
+            new Promise((resolve) => setTimeout(() => resolve("result"), 50))
+        );
 
         // Define the function once
         const fetcher = () => singleExecution(task);

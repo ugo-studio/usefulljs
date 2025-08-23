@@ -6,8 +6,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "types": ["bun-types"]
+    "declaration": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

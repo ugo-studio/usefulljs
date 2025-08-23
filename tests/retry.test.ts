@@ -1,4 +1,5 @@
-import { test, expect, mock, describe } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
+
 import { retry } from "../src/retry";
 
 describe("retry", () => {
@@ -41,7 +42,8 @@ describe("retry", () => {
         });
 
         const limit = 3;
-        await expect(retry(task, { limit, initialDelay: 10, onRetry })).rejects.toThrow();
+        await expect(retry(task, { limit, initialDelay: 10, onRetry })).rejects
+            .toThrow();
 
         expect(onRetry).toHaveBeenCalledTimes(limit);
         // Check arguments for the first call
@@ -63,7 +65,7 @@ describe("retry", () => {
         ).rejects.toThrow();
 
         expect(onRetry).toHaveBeenCalledTimes(4);
-        expect(onRetry.mock.calls[0][2]).toBe(50);  // 50 * 2^0 = 50
+        expect(onRetry.mock.calls[0][2]).toBe(50); // 50 * 2^0 = 50
         expect(onRetry.mock.calls[1][2]).toBe(100); // 50 * 2^1 = 100
         expect(onRetry.mock.calls[2][2]).toBe(120); // 50 * 2^2 = 200, capped at 120
         expect(onRetry.mock.calls[3][2]).toBe(120); // 50 * 2^3 = 400, capped at 120
@@ -76,7 +78,8 @@ describe("retry", () => {
         const onRetry = mock(() => {});
 
         const startTime = Date.now();
-        await expect(retry(task, { limit: 2, initialDelay: 0, onRetry })).rejects.toThrow();
+        await expect(retry(task, { limit: 2, initialDelay: 0, onRetry }))
+            .rejects.toThrow();
         const endTime = Date.now();
 
         expect(onRetry).toHaveBeenCalledTimes(2);

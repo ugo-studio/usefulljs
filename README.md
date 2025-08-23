@@ -22,7 +22,7 @@ Built with TypeScript, it offers full type safety and is designed for seamless i
   - `ArraySL`: An extended `Array` class that supercharges your data manipulations with convenient getters and powerful methods.
 - **Secure Cryptography**:
   - `encryptString` / `decryptString`: Encrypt and decrypt strings using AES-256-GCM with a time-to-live (TTL) to prevent replay attacks.
-  - `hashObject`: Create a deterministic SHA-256 hash of any serializable object.
+  - `hashObject`: Create a deterministic SHA-256 hash of any JavaScript value, including complex nested objects, Maps, Sets, and even structures with circular references.
 - **Type-Safe**: Fully written in TypeScript to provide excellent autocompletion and catch errors at compile time.
 - **Seamless Chaining**: `ArraySL` methods (including native ones like `.map` and `.filter`) return an `ArraySL` instance, allowing for elegant and readable method chaining.
 - **Lightweight & Zero-Dependency**: Keeps your `node_modules` folder clean and your bundle size small.
@@ -166,10 +166,10 @@ console.log(arr.last); // 30
 
 #### Methods
 
-- **`.unique([options])`**: Returns a new `ArraySL` with unique elements based on an optional `accessor` function.
 - **`.duplicates([options])`**: Returns a new `ArraySL` containing duplicate elements, with configurable modes (`all`, `first`, `subsequent`) and an optional `accessor`.
-- **`.medianBy(by)`**: Finds the median item(s) based on a numeric property.
-- **`.modeBy([by])`**: Finds the most frequently occurring item(s), using an optional `accessor` function.
+- **`.middle()`**: Returns the middle item(s) of the array based on their index, not their value. This is not a median calculation.
+- **`.mostFrequent([accessor])`**: Finds the most frequently occurring item(s), using an optional `accessor` function.
+- **`.unique([options])`**: Returns a new `ArraySL` with unique elements based on an optional `accessor` function.
 
 <details>
 <summary>Method Chaining Example</summary>
@@ -220,7 +220,9 @@ const secret = "my-super-secret-key";
 // Encrypt with a 5-second TTL
 const encrypted = await encryptString("Hello, World!", secret, { ttl: 5000 });
 // Encrypt without an expiration
-const permanent = await encryptString("This will not expire", secret, { ttl: null });
+const permanent = await encryptString("This will not expire", secret, {
+  ttl: null,
+});
 ```
 
 </details>
@@ -250,9 +252,18 @@ console.log(decrypted); // "Hello, World!"
 
 #### `hashObject(obj)`
 
-Calculates a deterministic SHA-256 hash of a JavaScript object or string.
+Calculates a deterministic SHA-256 hash of any JavaScript value.
 
-- **`obj`**: `string | object` - The object or string to hash.
+This function creates a consistent, canonical string representation of any object before hashing. It correctly handles complex and nested data structures, including:
+
+- Objects with keys in any order.
+- Arrays, `Map`, and `Set` objects (with elements in any order).
+- Primitives and special values like `Date`, `RegExp`, `BigInt`, `Symbol`, and `undefined`.
+- Objects with circular references (without throwing an error).
+
+This ensures that the same logical object always produces the same hash.
+
+- **`obj`**: `any` - The value to hash.
 
 <details>
 <summary>Example</summary>
@@ -260,13 +271,26 @@ Calculates a deterministic SHA-256 hash of a JavaScript object or string.
 ```ts
 import { hashObject } from "@ugo-code/streamline.js/crypto";
 
-const obj1 = { a: 1, b: 2 };
-const obj2 = { b: 2, a: 1 }; // Same as obj1, different key order
+// Works with complex, nested objects
+const obj1 = {
+  b: { d: new Set([1, new Date(0)]), c: 3 },
+  a: 2,
+};
+const obj2 = {
+  a: 2,
+  b: { c: 3, d: new Set([new Date(0), 1]) },
+};
 
 const hash1 = await hashObject(obj1);
 const hash2 = await hashObject(obj2);
 
 console.log(hash1 === hash2); // true
+
+// Handles circular references
+const circular: any = { key: "value" };
+circular.self = circular;
+const circularHash = await hashObject(circular);
+console.log(circularHash); // Produces a consistent hash without crashing
 ```
 
 </details>
@@ -286,10 +310,7 @@ The cryptography functions throw a `CryptoError` for specific, catchable failure
 <summary>Example of handling a `CryptoError`</summary>
 
 ```ts
-import {
-  decryptString,
-  CryptoError,
-} from "@ugo-code/streamline.js/crypto";
+import { decryptString, CryptoError } from "@ugo-code/streamline.js/crypto";
 
 try {
   const decrypted = await decryptString(expiredData, secret);

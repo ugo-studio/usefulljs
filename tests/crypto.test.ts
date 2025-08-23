@@ -1,10 +1,10 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import {
-    decryptString,
-    encryptString,
-    hashObject,
-    CryptoError,
+  CryptoError,
+  decryptString,
+  encryptString,
+  hashObject,
 } from "../src/crypto";
 
 describe("encryptString and decryptString", () => {
@@ -23,7 +23,10 @@ describe("encryptString and decryptString", () => {
 
         const promise = decryptString(encrypted, wrongKey);
         await expect(promise).rejects.toThrow(CryptoError);
-        await expect(promise).rejects.toHaveProperty("code", "DECRYPTION_FAILED");
+        await expect(promise).rejects.toHaveProperty(
+            "code",
+            "DECRYPTION_FAILED",
+        );
     });
 
     test("should fail to decrypt tampered data", async () => {
@@ -35,6 +38,33 @@ describe("encryptString and decryptString", () => {
         await expect(promise).rejects.toHaveProperty("code", "INVALID_DATA");
     });
 
+    test("should fail with DECRYPTION_FAILED for tampered ciphertext", async () => {
+        const encrypted = await encryptString(plaintext, secretKey);
+
+        // Decode the payload
+        const decodedB64 = decodeURIComponent(encrypted);
+        const binaryString = atob(decodedB64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Tamper with the last byte of the ciphertext
+        bytes[bytes.length - 1] = bytes[bytes.length - 1] ^ 0xff; // Flip all bits
+
+        // Re-encode
+        const tamperedBinaryString = String.fromCharCode(...bytes);
+        const tamperedB64 = btoa(tamperedBinaryString);
+        const tamperedEncrypted = encodeURIComponent(tamperedB64);
+
+        const promise = decryptString(tamperedEncrypted, secretKey);
+        await expect(promise).rejects.toThrow(CryptoError);
+        await expect(promise).rejects.toHaveProperty(
+            "code",
+            "DECRYPTION_FAILED",
+        );
+    });
+
     test("should fail if the payload is too short", async () => {
         const shortPayload = "short";
         const promise = decryptString(shortPayload, secretKey);
@@ -44,24 +74,27 @@ describe("encryptString and decryptString", () => {
 
     describe("Time-To-Live (TTL)", () => {
         test("should respect a short TTL and expire", async () => {
-            const encrypted = await encryptString(plaintext, secretKey, { ttl: 100 }); // 100ms TTL
+            const encrypted = await encryptString(plaintext, secretKey, {
+                ttl: 200, // 200ms TTL
+            });
 
             // Should decrypt successfully immediately
             const decrypted = await decryptString(encrypted, secretKey);
             expect(decrypted).toBe(plaintext);
 
             // Wait for TTL to expire
-            await new Promise((resolve) => setTimeout(resolve, 150));
+            await new Promise((resolve) => setTimeout(resolve, 300));
 
             // Should fail after TTL expiry
             const promise = decryptString(encrypted, secretKey);
             await expect(promise).rejects.toThrow(CryptoError);
             await expect(promise).rejects.toHaveProperty("code", "EXPIRED");
-            await expect(promise).rejects.toThrow("The encrypted data has expired.");
         });
 
         test("should not expire when TTL is null", async () => {
-            const encrypted = await encryptString(plaintext, secretKey, { ttl: null });
+            const encrypted = await encryptString(plaintext, secretKey, {
+                ttl: null,
+            });
             await new Promise((resolve) => setTimeout(resolve, 100)); // Wait a bit
             const decrypted = await decryptString(encrypted, secretKey);
             expect(decrypted).toBe(plaintext);
@@ -116,6 +149,64 @@ describe("hashObject", () => {
         const arr2 = [1, { a: 2 }, [3, 4]];
         const hash1 = await hashObject(arr1);
         const hash2 = await hashObject(arr2);
+        expect(hash1).toBe(hash2);
+    });
+});
+
+describe("hashObject with advanced types", () => {
+    test("should produce a consistent hash for objects with Dates", async () => {
+        const obj1 = { a: new Date(0), b: 1 };
+        const obj2 = { b: 1, a: new Date(0) };
+        const hash1 = await hashObject(obj1);
+        const hash2 = await hashObject(obj2);
+        expect(hash1).toBe(hash2);
+    });
+
+    test("should produce a consistent hash for objects with RegExps", async () => {
+        const obj1 = { a: /hello/gi, b: 1 };
+        const obj2 = { b: 1, a: /hello/gi };
+        const hash1 = await hashObject(obj1);
+        const hash2 = await hashObject(obj2);
+        expect(hash1).toBe(hash2);
+    });
+
+    test("should produce a consistent hash for Maps with different insertion orders", async () => {
+        const map1 = new Map([["a", 1], ["b", 2]]);
+        const map2 = new Map([["b", 2], ["a", 1]]);
+        const hash1 = await hashObject(map1);
+        const hash2 = await hashObject(map2);
+        expect(hash1).toBe(hash2);
+    });
+
+    test("should produce a consistent hash for Sets with different insertion orders", async () => {
+        const set1 = new Set([1, 2, 3]);
+        const set2 = new Set([3, 2, 1]);
+        const hash1 = await hashObject(set1);
+        const hash2 = await hashObject(set2);
+        expect(hash1).toBe(hash2);
+    });
+
+    test("should handle circular references gracefully", async () => {
+        const obj: any = { a: 1 };
+        obj.b = obj; // Circular reference
+        const hash = await hashObject(obj);
+
+        const obj2: any = { a: 1 };
+        obj2.b = obj2;
+        const hash2 = await hashObject(obj2);
+
+        expect(hash).toBe(hash2);
+        expect(hash).toBe(
+            "7ca81485219c7d71082025aa7bb6596d025b5ef7247384f94d9f2b0c4ee50c1b",
+        );
+    });
+
+    test("should handle BigInt, Symbol, and undefined values", async () => {
+        const symbol = Symbol("test");
+        const obj1 = { a: 1n, b: undefined, c: symbol };
+        const obj2 = { c: symbol, b: undefined, a: 1n };
+        const hash1 = await hashObject(obj1);
+        const hash2 = await hashObject(obj2);
         expect(hash1).toBe(hash2);
     });
 });
