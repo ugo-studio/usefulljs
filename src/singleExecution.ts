@@ -1,37 +1,10 @@
+import { hashObject } from "./crypto";
+
 /**
  * A serializable value that can be used as a key. It can be a primitive,
  * a plain object, or an array that can be safely stringified with JSON.
  */
 type SerializableKey = unknown;
-
-/**
- * Creates a SHA-256 hash of the given data. This is a robust way to generate a
- * consistent key from complex data types like objects or arrays.
- * @param data The data to hash.
- * @returns A promise that resolves to the hex-encoded hash string.
- * @internal
- */
-async function getHash(data: SerializableKey): Promise<string> {
-    let dataString: string;
-    // Ensure consistent string representation for hashing.
-    if (typeof data === "string") {
-        dataString = data;
-    } else if (data !== null && typeof data === "object") {
-        // Handles arrays and plain objects. May throw on circular references.
-        dataString = JSON.stringify(data);
-    } else {
-        // Handles primitives like number, boolean, null, undefined.
-        dataString = String(data);
-    }
-
-    const encoder = new TextEncoder();
-    const encodedData = encoder.encode(dataString);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", encodedData);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-    // Convert each byte to a 2-character hex string.
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 /**
  * A map to store promises of currently active (in-flight) tasks.
@@ -91,7 +64,7 @@ export async function singleExecution<TResult>(
 ): Promise<TResult> {
     // If a key is provided, use it; otherwise, use the function's string representation.
     const keySource = key !== undefined ? key : taskFn.toString();
-    const hashedKey = await getHash(keySource);
+    const hashedKey = await hashObject(keySource);
 
     const existingPromise = activeRequests.get(hashedKey);
 

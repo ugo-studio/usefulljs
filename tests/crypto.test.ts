@@ -100,6 +100,19 @@ describe("encryptString and decryptString", () => {
             expect(decrypted).toBe(plaintext);
         });
     });
+
+    describe("PBKDF2 Iterations", () => {
+        test("should encrypt and decrypt successfully with custom iterations", async () => {
+            // Using a lower iteration count for test speed.
+            // WARNING: In production, use the default or higher.
+            const customIterations = 1000;
+            const encrypted = await encryptString(plaintext, secretKey, {
+                pbkdf2Iterations: customIterations,
+            });
+            const decrypted = await decryptString(encrypted, secretKey);
+            expect(decrypted).toBe(plaintext);
+        });
+    });
 });
 
 describe("hashObject", () => {

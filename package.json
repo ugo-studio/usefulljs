@@ -1,6 +1,6 @@
 {
   "name": "@ugo-code/streamline.js",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -31,6 +31,7 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "node scripts/generate-exports.js && tsc --module esnext --outDir dist/esm && tsc --module commonjs --outDir dist/cjs",
+    "dev": "bun --watch src/index.ts",
     "test": "bun test",
     "pub": "bun run build && npm publish --access=public"
   },

@@ -206,8 +206,9 @@ Encrypts a string using AES-256-GCM and embeds a Time-To-Live (TTL).
 
 - **`plaintext`**: `string` - The string to encrypt.
 - **`secretKey`**: `string` - The secret key for encryption.
-- **`options`** (optional): `{ ttl?: number | null }` - An options object.
+- **`options`** (optional): `{ ttl?: number | null; pbkdf2Iterations?: number }` - An options object.
   - `ttl`: (default: `3600000`ms, 1 hour) - The validity period in milliseconds. Pass `null` to disable expiration.
+  - `pbkdf2Iterations`: `number` (default: `100000`) - The number of iterations for key derivation (PBKDF2). **Warning**: Reducing this value weakens security.
 - **Throws**: `CryptoError` if the environment is unsupported or encryption fails.
 
 <details>

@@ -105,4 +105,21 @@ describe("singleExecution", () => {
         expect(task1).toHaveBeenCalledTimes(1);
         expect(task2).toHaveBeenCalledTimes(1);
     });
+
+    test("should treat objects with different key orders as the same key", async () => {
+        const task = mock(() =>
+            new Promise((resolve) => setTimeout(() => resolve("result"), 50))
+        );
+        const key1 = { a: 1, b: 2 };
+        const key2 = { b: 2, a: 1 };
+
+        const [result1, result2] = await Promise.all([
+            singleExecution(task, key1),
+            singleExecution(task, key2),
+        ]);
+
+        expect(result1).toBe("result");
+        expect(result2).toBe("result");
+        expect(task).toHaveBeenCalledTimes(1);
+    });
 });

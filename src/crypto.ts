@@ -32,21 +32,35 @@ const KEY_DERIVATION_ALGORITHM = "PBKDF2";
 const KEY_LENGTH_BITS = 256;
 const SALT_LENGTH_BYTES = 16;
 const IV_LENGTH_BYTES = 12;
-const PBKDF2_ITERATIONS = 100000;
 const PBKDF2_HASH = "SHA-256";
 const EXPIRATION_LENGTH_BYTES = 8; // 64-bit float for the timestamp
+const ITERATIONS_LENGTH_BYTES = 4; // 32-bit unsigned integer for iterations
+
+// --- Default Configuration ---
 const DEFAULT_TTL_MS: number = 60 * 60 * 1000; // 1 hour
+const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
 // --- Helper Functions ---
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 8192; // Process in 8KB chunks
+  let result = "";
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    // String.fromCharCode.apply is more performant than a spread operator for this use case.
+    result += String.fromCharCode.apply(null, chunk as any);
+  }
+
+  return btoa(result);
 }
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes.buffer;
@@ -62,51 +76,79 @@ function ensureWebCryptoAvailable(): void {
 }
 
 /**
- * Encrypts a plaintext string using AES-256-GCM, embedding a TTL.
+ * Derives a cryptographic key from a secret string using PBKDF2.
+ * @internal
+ */
+async function _deriveKey(
+  secretKey: string,
+  salt: BufferSource,
+  iterations: number,
+  usage: KeyUsage[],
+): Promise<CryptoKey> {
+  const passwordKeyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secretKey),
+    { name: KEY_DERIVATION_ALGORITHM },
+    false,
+    ["deriveKey"],
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: KEY_DERIVATION_ALGORITHM,
+      salt,
+      iterations,
+      hash: PBKDF2_HASH,
+    },
+    passwordKeyMaterial,
+    { name: ALGORITHM_NAME, length: KEY_LENGTH_BITS },
+    false,
+    usage,
+  );
+}
+
+/**
+ * Encrypts a plaintext string using AES-256-GCM, embedding TTL and iteration count.
  *
  * @param plaintext The string to encrypt.
  * @param secretKey The secret key for key derivation.
- * @param ttl The Time-To-Live in milliseconds. Pass `null` to disable expiration. Defaults to 1 hour.
- * @returns A Promise resolving to a URL-safe, Base64 encoded string containing: expiration + salt + iv + encryptedData.
+ * @param options Configuration for TTL and PBKDF2 iterations.
+ * @param options.ttl The Time-To-Live in milliseconds. Pass `null` for no expiration. Defaults to 1 hour.
+ * @param options.pbkdf2Iterations The number of iterations for key derivation.
+ *        **WARNING**: Reducing this from the default weakens security.
+ * @returns A Promise resolving to a URL-safe, Base64 encoded string.
  * @throws {CryptoError} If the environment is unsupported or encryption fails.
  */
 export async function encryptString(
   plaintext: string,
   secretKey: string,
-  options: { ttl?: number | null } = {},
+  options: { ttl?: number | null; pbkdf2Iterations?: number } = {},
 ): Promise<string> {
   ensureWebCryptoAvailable();
 
-  const { ttl = DEFAULT_TTL_MS } = options;
+  const {
+    ttl = DEFAULT_TTL_MS,
+    pbkdf2Iterations = DEFAULT_PBKDF2_ITERATIONS,
+  } = options;
 
   try {
-    // 1. Calculate the expiration timestamp. Use Infinity for a null TTL.
+    // 1. Store the iteration count and expiration timestamp.
+    const iterationsBuffer = new ArrayBuffer(ITERATIONS_LENGTH_BYTES);
+    new DataView(iterationsBuffer).setUint32(0, pbkdf2Iterations, false); // Big-endian
+
     const expirationTimestamp = ttl === null ? Infinity : Date.now() + ttl;
     const expirationBuffer = new ArrayBuffer(EXPIRATION_LENGTH_BYTES);
-    new DataView(expirationBuffer).setFloat64(0, expirationTimestamp, false); // Big-endian
+    new DataView(expirationBuffer).setFloat64(0, expirationTimestamp, false);
 
-    // 2. Generate cryptographic primitives.
+    // 2. Generate salt and IV.
     const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH_BYTES));
     const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
 
-    // 3. Derive the encryption key from the secret.
-    const passwordKeyMaterial = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(secretKey),
-      { name: KEY_DERIVATION_ALGORITHM },
-      false,
-      ["deriveKey"],
-    );
-    const derivedEncryptionKey = await crypto.subtle.deriveKey(
-      {
-        name: KEY_DERIVATION_ALGORITHM,
-        salt,
-        iterations: PBKDF2_ITERATIONS,
-        hash: PBKDF2_HASH,
-      },
-      passwordKeyMaterial,
-      { name: ALGORITHM_NAME, length: KEY_LENGTH_BITS },
-      false,
+    // 3. Derive the encryption key.
+    const derivedEncryptionKey = await _deriveKey(
+      secretKey,
+      salt,
+      pbkdf2Iterations,
       ["encrypt"],
     );
 
@@ -118,17 +160,24 @@ export async function encryptString(
       encodedPlaintext,
     );
 
-    // 5. Combine all parts into a single buffer.
+    // 5. Combine [iterations, expiration, salt, iv, ciphertext] into a single buffer.
     const combinedData = new Uint8Array(
-      EXPIRATION_LENGTH_BYTES + salt.length + iv.length + ciphertext.byteLength,
+      ITERATIONS_LENGTH_BYTES +
+        EXPIRATION_LENGTH_BYTES +
+        salt.length +
+        iv.length +
+        ciphertext.byteLength,
     );
-    combinedData.set(new Uint8Array(expirationBuffer), 0);
-    combinedData.set(salt, EXPIRATION_LENGTH_BYTES);
-    combinedData.set(iv, EXPIRATION_LENGTH_BYTES + salt.length);
-    combinedData.set(
-      new Uint8Array(ciphertext),
-      EXPIRATION_LENGTH_BYTES + salt.length + iv.length,
-    );
+    let offset = 0;
+    combinedData.set(new Uint8Array(iterationsBuffer), offset);
+    offset += ITERATIONS_LENGTH_BYTES;
+    combinedData.set(new Uint8Array(expirationBuffer), offset);
+    offset += EXPIRATION_LENGTH_BYTES;
+    combinedData.set(salt, offset);
+    offset += salt.length;
+    combinedData.set(iv, offset);
+    offset += iv.length;
+    combinedData.set(new Uint8Array(ciphertext), offset);
 
     return encodeURIComponent(arrayBufferToBase64(combinedData.buffer));
   } catch (error: any) {
@@ -142,15 +191,12 @@ export async function encryptString(
 
 /**
  * Decrypts a string that was encrypted with encryptString, checking its TTL.
+ * The iteration count is automatically extracted from the payload.
  *
  * @param encryptedDataB64 The Base64 encoded string from encryptString.
  * @param secretKey The *same* secret key used for encryption.
  * @returns A Promise resolving to the original plaintext string.
- * @throws {CryptoError} With codes:
- *   - `EXPIRED`: The data's TTL has passed.
- *   - `INVALID_DATA`: The encrypted payload is malformed or too short.
- *   - `DECRYPTION_FAILED`: The secret key is likely incorrect or the data was tampered with.
- *   - `UNSUPPORTED_ENVIRONMENT`: Web Crypto API is not available.
+ * @throws {CryptoError}
  */
 export async function decryptString(
   encryptedDataB64: string,
@@ -172,7 +218,9 @@ export async function decryptString(
     );
   }
 
-  const minLength = EXPIRATION_LENGTH_BYTES + SALT_LENGTH_BYTES +
+  const minLength = ITERATIONS_LENGTH_BYTES +
+    EXPIRATION_LENGTH_BYTES +
+    SALT_LENGTH_BYTES +
     IV_LENGTH_BYTES;
   if (combinedData.length < minLength) {
     throw new CryptoError(
@@ -181,50 +229,52 @@ export async function decryptString(
     );
   }
 
-  // 1. Extract expiration and enforce TTL.
+  // 1. Extract iterations and expiration.
+  let offset = 0;
+  const iterationsView = new DataView(
+    combinedData.buffer,
+    offset,
+    ITERATIONS_LENGTH_BYTES,
+  );
+  const pbkdf2Iterations = iterationsView.getUint32(0, false);
+  offset += ITERATIONS_LENGTH_BYTES;
+
   const expirationView = new DataView(
     combinedData.buffer,
-    0,
+    offset,
     EXPIRATION_LENGTH_BYTES,
   );
   const expirationTimestamp = expirationView.getFloat64(0, false);
+  offset += EXPIRATION_LENGTH_BYTES;
 
+  // 2. Check for expiration.
   if (Date.now() > expirationTimestamp) {
     throw new CryptoError("EXPIRED", "The encrypted data has expired.");
   }
 
-  // 2. Extract salt, IV, and ciphertext.
-  const saltOffset = EXPIRATION_LENGTH_BYTES;
-  const ivOffset = saltOffset + SALT_LENGTH_BYTES;
-  const ciphertextOffset = ivOffset + IV_LENGTH_BYTES;
+  // 3. Extract salt, IV, and ciphertext.
+  const salt = combinedData.subarray(
+    offset,
+    offset + SALT_LENGTH_BYTES,
+  ) as BufferSource;
+  offset += SALT_LENGTH_BYTES;
+  const iv = combinedData.subarray(
+    offset,
+    offset + IV_LENGTH_BYTES,
+  ) as BufferSource;
+  offset += IV_LENGTH_BYTES;
+  const ciphertext = combinedData.subarray(offset) as BufferSource;
 
-  const salt = combinedData.subarray(saltOffset, ivOffset) as BufferSource;
-  const iv = combinedData.subarray(ivOffset, ciphertextOffset) as BufferSource;
-  const ciphertext = combinedData.subarray(ciphertextOffset) as BufferSource;
-
-  // 3. Derive the decryption key.
-  const passwordKeyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secretKey),
-    { name: KEY_DERIVATION_ALGORITHM },
-    false,
-    ["deriveKey"],
-  );
-  const derivedDecryptionKey = await crypto.subtle.deriveKey(
-    {
-      name: KEY_DERIVATION_ALGORITHM,
-      salt: salt,
-      iterations: PBKDF2_ITERATIONS,
-      hash: PBKDF2_HASH,
-    },
-    passwordKeyMaterial,
-    { name: ALGORITHM_NAME, length: KEY_LENGTH_BITS },
-    false,
+  // 4. Derive the decryption key using the extracted iteration count.
+  const derivedDecryptionKey = await _deriveKey(
+    secretKey,
+    salt,
+    pbkdf2Iterations,
     ["decrypt"],
   );
 
   try {
-    // 4. Decrypt the ciphertext.
+    // 5. Decrypt the ciphertext.
     const decryptedBuffer = await crypto.subtle.decrypt(
       { name: ALGORITHM_NAME, iv: iv },
       derivedDecryptionKey,
