@@ -97,8 +97,9 @@ Executes an asynchronous task and automatically retries it with an exponential b
 - **`taskFn`**: `() => Promise<TResult>` - The asynchronous function to execute.
 - **`options`** (optional): `RetryOptions`
   - `limit`: `number` (default: `2`) - The maximum number of retry attempts.
-  - `initialDelay`: `number` (default: `0`) - The initial delay in milliseconds before the first retry.
-  - `maxDelay`: `number` (default: `Infinity`) - The maximum delay between retries.
+  - `backoff`: `object` (optional) - Configuration for the backoff strategy.
+    - `initialDelay`: `number` (default: `0`) - The initial delay in milliseconds before the first retry.
+    - `maxDelay`: `number` (default: `Infinity`) - The maximum delay between retries.
   - `onRetry`: `(error, attempt, delay) => void` - A callback executed before each retry.
 
 <details>
@@ -119,7 +120,9 @@ async function fetchUnreliableData() {
 
 const data = await retry(fetchUnreliableData, {
   limit: 3,
-  initialDelay: 100,
+  backoff: {
+    initialDelay: 100,
+  },
   onRetry: (error, attempt) => {
     console.log(`Attempt ${attempt} failed. Retrying...`);
   },

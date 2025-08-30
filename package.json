@@ -29,15 +29,15 @@
     }
   },
   "scripts": {
-    "prepublishOnly": "npm run build",
+    "dev": "bun --watch src/index.ts",
+    "test": "bun test",
     "script:dist": "node scripts/clear-dist-dir.js",
     "script:exports": "node scripts/generate-exports.js",
     "build:esm": "tsc --module esnext --outDir dist/esm",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build": "npm run script:dist && npm run script:exports && npm run build:esm && npm run build:cjs",
-    "dev": "bun --watch src/index.ts",
-    "test": "bun test",
-    "pub": "bun run build && npm publish --access=public"
+    "prepublishOnly": "npm run build",
+    "pub": "npm publish --access=public"
   },
   "keywords": [
     "async",

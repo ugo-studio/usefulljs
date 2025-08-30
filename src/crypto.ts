@@ -307,6 +307,7 @@ const createCanonicalString = (
   if (typeof value === "undefined") return '"[Undefined]"';
   if (typeof value === "bigint") return `"[BigInt]:${value.toString()}"`;
   if (typeof value === "symbol") return `"[Symbol]:${value.toString()}"`;
+  if (typeof value === "function") return `"[Function]:${value.toString()}"`;
   if (typeof value !== "object") {
     // Handles string, number, boolean. JSON.stringify escapes strings correctly.
     return JSON.stringify(value);

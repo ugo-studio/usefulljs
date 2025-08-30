@@ -4,17 +4,9 @@ const DEFAULT_INITIAL_DELAY = 0;
 const DEFAULT_MAX_DELAY = Infinity;
 
 /**
- * Configuration options for the retryTask function.
+ * Configuration options for the backoff strategy.
  */
-export interface RetryOptions<TResult> {
-    /**
-     * The maximum number of retry attempts to make after the initial failure.
-     * For example, a limit of 2 means the task will be executed a total of 3 times
-     * (the initial attempt + 2 retries).
-     * @default 2
-     */
-    limit?: number;
-
+export interface BackoffOptions {
     /**
      * The initial delay in milliseconds before the first retry attempt.
      * Set to a value greater than 0 to enable a delay. Subsequent retries
@@ -30,6 +22,25 @@ export interface RetryOptions<TResult> {
      * @default Infinity
      */
     maxDelay?: number;
+}
+
+/**
+ * Configuration options for the retryTask function.
+ */
+export interface RetryOptions<TResult> {
+    /**
+     * The maximum number of retry attempts to make after the initial failure.
+     * For example, a limit of 2 means the task will be executed a total of 3 times
+     * (the initial attempt + 2 retries).
+     * @default 2
+     */
+    limit?: number;
+
+    /**
+     * Configuration for the backoff strategy used between retries.
+     * If this is not provided, retries will be attempted immediately without any delay.
+     */
+    backoff?: BackoffOptions;
 
     /**
      * An optional callback function that is executed before each retry attempt.
@@ -78,7 +89,9 @@ export interface RetryOptions<TResult> {
  *
  * const data = await retry(fetchUnreliableData, {
  *   limit: 3,
- *   initialDelay: 100,
+ *   backoff: {
+ *     initialDelay: 100,
+ *   },
  *   onRetry: (error, attempt) => {
  *     console.log(`Attempt ${attempt} failed. Retrying...`);
  *   },
@@ -93,10 +106,12 @@ export async function retry<TResult>(
 ): Promise<TResult> {
     const {
         limit = DEFAULT_LIMIT,
-        initialDelay = DEFAULT_INITIAL_DELAY,
-        maxDelay = DEFAULT_MAX_DELAY,
+        backoff,
         onRetry,
     } = options;
+
+    const initialDelay = backoff?.initialDelay ?? DEFAULT_INITIAL_DELAY;
+    const maxDelay = backoff?.maxDelay ?? DEFAULT_MAX_DELAY;
 
     let lastError: unknown;
 

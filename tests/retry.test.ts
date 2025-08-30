@@ -20,7 +20,7 @@ describe("retry", () => {
             return "Success";
         });
 
-        const result = await retry(task, { limit: 3, initialDelay: 10 });
+        const result = await retry(task, { limit: 3, backoff: { initialDelay: 10 } });
         expect(result).toBe("Success");
         expect(task).toHaveBeenCalledTimes(3);
     });
@@ -30,7 +30,7 @@ describe("retry", () => {
             throw new Error("Persistent Failure");
         });
 
-        const promise = retry(task, { limit: 2, initialDelay: 10 });
+        const promise = retry(task, { limit: 2, backoff: { initialDelay: 10 } });
         await expect(promise).rejects.toThrow("Persistent Failure");
         expect(task).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
     });
@@ -42,7 +42,7 @@ describe("retry", () => {
         });
 
         const limit = 3;
-        await expect(retry(task, { limit, initialDelay: 10, onRetry })).rejects
+        await expect(retry(task, { limit, backoff: { initialDelay: 10 }, onRetry })).rejects
             .toThrow();
 
         expect(onRetry).toHaveBeenCalledTimes(limit);
@@ -61,7 +61,7 @@ describe("retry", () => {
         });
 
         await expect(
-            retry(task, { limit: 4, initialDelay: 50, maxDelay: 120, onRetry }),
+            retry(task, { limit: 4, backoff: { initialDelay: 50, maxDelay: 120 }, onRetry }),
         ).rejects.toThrow();
 
         expect(onRetry).toHaveBeenCalledTimes(4);
@@ -78,7 +78,7 @@ describe("retry", () => {
         const onRetry = mock(() => {});
 
         const startTime = Date.now();
-        await expect(retry(task, { limit: 2, initialDelay: 0, onRetry }))
+        await expect(retry(task, { limit: 2, backoff: { initialDelay: 0 }, onRetry }))
             .rejects.toThrow();
         const endTime = Date.now();
 
