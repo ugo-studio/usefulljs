@@ -31,13 +31,17 @@ const activeRequests = new Map<string, Promise<unknown>>();
  * @returns {Promise<TResult>} A promise that resolves or rejects with the result of the task.
  * @example
  * ```ts
+ * import { singleExecution } from "usefulljs/singleExecution";
+ *
  * // Example 1: Basic deduplication with a string key
  * async function fetchUser(userId: string) {
  *   // This function will only be executed once, even if called multiple times in parallel.
  *   return singleExecution(
  *     () => {
  *       console.log(`Fetching user ${userId}...`);
- *       return api.fetch(`/users/${userId}`);
+ *       // const api = { fetch: (url) => Promise.resolve({id: userId}) };
+ *       // return api.fetch(`/users/${userId}`);
+ *       return Promise.resolve({ id: userId });
  *     },
  *     `user-${userId}` // A simple, descriptive key
  *   );
@@ -48,13 +52,13 @@ const activeRequests = new Map<string, Promise<unknown>>();
  * // Example 2: Using an object as a key
  * async function searchProducts(filters: object) {
  *   return singleExecution(
- *     () => api.post('/products/search', filters),
+ *     () => Promise.resolve({}), // api.post('/products/search', filters),
  *     filters // The filters object is hashed to create a unique key
  *   );
  * }
  *
  * // Example 3: No key provided (hashes the function's source)
- * const fetchConfig = () => singleExecution(() => api.fetch('/config'));
+ * const fetchConfig = () => singleExecution(() => Promise.resolve({})); // api.fetch('/config'));
  * Promise.all([fetchConfig(), fetchConfig()]); // The config is fetched only once.
  * ```
  */

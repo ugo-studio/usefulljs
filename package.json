@@ -1,6 +1,6 @@
 {
-  "name": "@ugo-code/streamline.js",
-  "version": "1.0.6",
+  "name": "usefulljs",
+  "version": "1.1.0",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -30,7 +30,11 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "node scripts/generate-exports.js && tsc --module esnext --outDir dist/esm && tsc --module commonjs --outDir dist/cjs",
+    "script:dist": "node scripts/clear-dist-dir.js",
+    "script:exports": "node scripts/generate-exports.js",
+    "build:esm": "tsc --module esnext --outDir dist/esm",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "build": "npm run script:dist && npm run script:exports && npm run build:esm && npm run build:cjs",
     "dev": "bun --watch src/index.ts",
     "test": "bun test",
     "pub": "bun run build && npm publish --access=public"
@@ -39,18 +43,20 @@
     "async",
     "asynchronous",
     "utility",
-    "streamline",
+    "useful",
+    "javascript",
+    "typescript",
     "array",
     "encrypt",
     "decrypt"
   ],
-  "homepage": "https://github.com/ugo-studio/streamline.js/",
+  "homepage": "https://github.com/ugo-studio/usefulljs/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ugo-studio/streamline.js.git"
+    "url": "https://github.com/ugo-studio/usefulljs.git"
   },
   "bugs": {
-    "url": "https://github.com/ugo-studio/streamline.js/issues"
+    "url": "https://github.com/ugo-studio/usefulljs/issues"
   },
   "author": "Ugochukwu David",
   "license": "MIT",

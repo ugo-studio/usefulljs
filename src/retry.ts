@@ -63,17 +63,28 @@ export interface RetryOptions<TResult> {
  *   attempts have been exhausted.
  * @example
  * ```ts
- * // Example 1: Basic usage with default settings (2 retries, no delay)
- * const data = await retryTask(fetchData);
+ * import { retry } from "usefulljs/retry";
  *
- * // Example 2: Customizing retry behavior to include a delay
- * const user = await retryTask(fetchUser, {
- *   limit: 3,
- *   initialDelay: 100, // Enable a 100ms initial delay with backoff
- *   onRetry: (error, attempt) => {
- *     console.log(`Attempt ${attempt} failed. Retrying in a moment...`, error);
+ * // Example: Retrying a failing network request
+ * let attempt = 0;
+ * async function fetchUnreliableData() {
+ *   attempt++;
+ *   console.log(`Attempt #${attempt}...`);
+ *   if (attempt < 3) {
+ *     throw new Error("Network error");
  *   }
+ *   return { data: "Finally!" };
+ * }
+ *
+ * const data = await retry(fetchUnreliableData, {
+ *   limit: 3,
+ *   initialDelay: 100,
+ *   onRetry: (error, attempt) => {
+ *     console.log(`Attempt ${attempt} failed. Retrying...`);
+ *   },
  * });
+ * 
+ * console.log(data); // { data: 'Finally!' }
  * ```
  */
 export async function retry<TResult>(

@@ -1,7 +1,7 @@
-# @ugo-code/streamline.js
+# usefulljs
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![npm version](https://badge.fury.io/js/%40ugo-code%2Fstreamline.js.svg)](https://badge.fury.io/js/%40ugo-code%2Fstreamline.js)
+[![npm version](https://badge.fury.io/js/usefulljs.svg)](https://badge.fury.io/js/usefulljs)
 
 **A lightweight, powerful, and zero-dependency utility library for TypeScript and JavaScript that simplifies complex asynchronous operations, enhances array manipulations, and provides robust cryptography tools.**
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-`@ugo-code/streamline.js` provides a set of straight-forward, robust, and efficient functions designed to tackle common challenges in modern web development. Whether you need to prevent redundant API calls, handle transient network errors gracefully, perform complex data analysis on arrays, or secure your data with modern cryptography, this library has you covered.
+`usefulljs` provides a set of straight-forward, robust, and efficient functions designed to tackle common challenges in modern web development. Whether you need to prevent redundant API calls, handle transient network errors gracefully, perform complex data analysis on arrays, or secure your data with modern cryptography, this library has you covered.
 
 Built with TypeScript, it offers full type safety and is designed for seamless integration into any project, supporting both ES Modules and CommonJS.
 
@@ -19,30 +19,30 @@ Built with TypeScript, it offers full type safety and is designed for seamless i
   - `singleExecution`: Guarantees that an async function is only executed once at a time for a given key, preventing race conditions and redundant operations.
   - `retry`: Automatically retries a failing async task with a configurable exponential backoff strategy, perfect for handling unreliable network requests.
 - **Powerful Array Utilities**:
-  - `ArraySL`: An extended `Array` class that supercharges your data manipulations with convenient getters and powerful methods.
+  - `ArrayUF`: An extended `Array` class that supercharges your data manipulations with convenient getters and powerful methods.
 - **Secure Cryptography**:
   - `encryptString` / `decryptString`: Encrypt and decrypt strings using AES-256-GCM with a time-to-live (TTL) to prevent replay attacks.
   - `hashObject`: Create a deterministic SHA-256 hash of any JavaScript value, including complex nested objects, Maps, Sets, and even structures with circular references.
 - **Type-Safe**: Fully written in TypeScript to provide excellent autocompletion and catch errors at compile time.
-- **Seamless Chaining**: `ArraySL` methods (including native ones like `.map` and `.filter`) return an `ArraySL` instance, allowing for elegant and readable method chaining.
+- **Seamless Chaining**: `ArrayUF` methods (including native ones like `.map` and `.filter`) return an `ArrayUF` instance, allowing for elegant and readable method chaining.
 - **Lightweight & Zero-Dependency**: Keeps your `node_modules` folder clean and your bundle size small.
 
 ## Installation
 
 ```bash
-npm install @ugo-code/streamline.js
+npm install usefulljs
 ```
 
 or
 
 ```bash
-yarn add @ugo-code/streamline.js
+yarn add usefulljs
 ```
 
 or
 
 ```bash
-bun add @ugo-code/streamline.js
+bun add usefulljs
 ```
 
 ## API Documentation
@@ -51,7 +51,7 @@ A quick look at the utilities this package provides. Click on any utility to see
 
 - [**`singleExecution`**](#singleExecutiontresulttaskfn-key)
 - [**`retry`**](#retrytresulttaskfn-options)
-- [**`ArraySL`**](#arrayslt)
+- [**`ArrayUF`**](#arrayuft)
 - [**`Cryptography`**](#cryptography)
 
 ---
@@ -67,7 +67,7 @@ Ensures that an asynchronous task is only executed once at a time for a given un
 <summary>Example</summary>
 
 ```ts
-import { singleExecution } from "@ugo-code/streamline.js/singleExecution";
+import { singleExecution } from "usefulljs/singleExecution";
 
 async function fetchUser(userId: string) {
   return singleExecution(
@@ -105,7 +105,7 @@ Executes an asynchronous task and automatically retries it with an exponential b
 <summary>Example</summary>
 
 ```ts
-import { retry } from "@ugo-code/streamline.js/retry";
+import { retry } from "usefulljs/retry";
 
 let attempt = 0;
 async function fetchUnreliableData() {
@@ -132,23 +132,25 @@ console.log(data); // { data: 'Finally!' }
 
 ---
 
-### `ArraySL<T>`
+### `ArrayUF<T>`
 
 An extended `Array` class with convenient getters and powerful utility methods.
 
 <details>
-<summary>Creating an `ArraySL` instance</summary>
+<summary>Creating an `ArrayUF` instance</summary>
 
 ```ts
-import { ArraySL } from "@ugo-code/streamline.js/array";
+import { ArrayUF } from "usefulljs/array";
 
-const numbers = new ArraySL([1, 2, 3, 4, 5]);
+const numbers = new ArrayUF([1, 2, 3, 4, 5]);
 ```
 
 </details>
 
 #### Getters
 
+- **`.isEmpty`**: Returns `true` if the array has no items.
+- **`.isNotEmpty`**: Returns `true` if the array has one or more items.
 - **`.first`**: Returns the first element.
 - **`.last`**: Returns the last element.
 - **`.random`**: Returns a random element.
@@ -157,27 +159,65 @@ const numbers = new ArraySL([1, 2, 3, 4, 5]);
 <summary>Example</summary>
 
 ```ts
-const arr = new ArraySL([10, 20, 30]);
-console.log(arr.first); // 10
-console.log(arr.last); // 30
+const fullList = new ArrayUF([10, 20, 30]);
+console.log(fullList.isEmpty); //-> false
+console.log(fullList.isNotEmpty); //-> true
+console.log(fullList.first); // 10
+console.log(fullList.last); // 30
+
+const emptyList = new ArrayUF();
+console.log(emptyList.isEmpty); //-> true
+console.log(emptyList.isNotEmpty); //-> false
 ```
 
 </details>
 
 #### Methods
 
-- **`.duplicates([options])`**: Returns a new `ArraySL` containing duplicate elements, with configurable modes (`all`, `first`, `subsequent`) and an optional `accessor`.
+- **`.chunk(size)`**: Splits the array into smaller arrays (chunks) of a specified size.
+- **`.compact()`**: Returns a new `ArrayUF` with all falsy values removed.
+- **`.duplicates([options])`**: Returns a new `ArrayUF` containing duplicate elements, with configurable modes (`all`, `first`, `subsequent`) and an optional `accessor`.
+- **`.groupBy(accessor)`**: Groups the elements of the array into an object based on a key generated by the accessor function.
 - **`.middle()`**: Returns the middle item(s) of the array based on their index, not their value. This is not a median calculation.
 - **`.mostFrequent([accessor])`**: Finds the most frequently occurring item(s), using an optional `accessor` function.
-- **`.unique([options])`**: Returns a new `ArraySL` with unique elements based on an optional `accessor` function.
+- **`.shuffle()`**: Returns a new `ArrayUF` with the elements randomly shuffled.
+- **`.unique([options])`**: Returns a new `ArrayUF` with unique elements based on an optional `accessor` function.
 
 <details>
-<summary>Method Chaining Example</summary>
+<summary>Method Examples</summary>
 
 ```ts
-import { ArraySL } from "@ugo-code/streamline.js/array";
+import { ArrayUF } from "usefulljs/array";
 
-const products = new ArraySL([
+// chunk()
+const numbers = new ArrayUF([1, 2, 3, 4, 5]);
+const chunks = numbers.chunk(2);
+console.log(chunks); // ArrayUF[ArrayUF[1, 2], ArrayUF[3, 4], ArrayUF[5]]
+
+// compact()
+const mixed = new ArrayUF([0, 1, false, 2, '', 3, null]);
+const compacted = mixed.compact();
+console.log(compacted); // ArrayUF[1, 2, 3]
+
+// groupBy()
+const users = new ArrayUF([
+  { name: 'Alice', department: 'HR' },
+  { name: 'Bob', department: 'Engineering' },
+  { name: 'Charlie', department: 'HR' }
+]);
+const grouped = users.groupBy(user => user.department);
+// grouped is:
+// {
+//   HR: ArrayUF[{ name: 'Alice', ... }, { name: 'Charlie', ... }],
+//   Engineering: ArrayUF[{ name: 'Bob', ... }]
+// }
+
+// shuffle()
+const shuffled = numbers.shuffle();
+console.log(shuffled); // e.g., ArrayUF[3, 5, 1, 4, 2]
+
+// Method Chaining
+const products = new ArrayUF([
   { category: "A", price: 10 },
   { category: "B", price: 20 },
   { category: "A", price: 30 },
@@ -215,7 +255,7 @@ Encrypts a string using AES-256-GCM and embeds a Time-To-Live (TTL).
 <summary>Example</summary>
 
 ```ts
-import { encryptString } from "@ugo-code/streamline.js/crypto";
+import { encryptString } from "usefulljs/crypto";
 
 const secret = "my-super-secret-key";
 // Encrypt with a 5-second TTL
@@ -240,7 +280,7 @@ Decrypts a string encrypted with `encryptString`, verifying its TTL.
 <summary>Example</summary>
 
 ```ts
-import { decryptString } from "@ugo-code/streamline.js/crypto";
+import { decryptString } from "usefulljs/crypto";
 
 // Assuming 'encrypted' is from the previous example
 const decrypted = await decryptString(encrypted, secret);
@@ -270,7 +310,7 @@ This ensures that the same logical object always produces the same hash.
 <summary>Example</summary>
 
 ```ts
-import { hashObject } from "@ugo-code/streamline.js/crypto";
+import { hashObject } from "usefulljs/crypto";
 
 // Works with complex, nested objects
 const obj1 = {
@@ -311,7 +351,7 @@ The cryptography functions throw a `CryptoError` for specific, catchable failure
 <summary>Example of handling a `CryptoError`</summary>
 
 ```ts
-import { decryptString, CryptoError } from "@ugo-code/streamline.js/crypto";
+import { decryptString, CryptoError } from "usefulljs/crypto";
 
 try {
   const decrypted = await decryptString(expiredData, secret);

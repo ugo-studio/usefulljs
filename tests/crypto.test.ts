@@ -8,7 +8,7 @@ import {
 } from "../src/crypto";
 
 describe("encryptString and decryptString", () => {
-    const plaintext = "Hello, Streamline.js!";
+    const plaintext = "Hello, usefulljs!";
     const secretKey = "a-very-secret-key";
 
     test("should encrypt and decrypt successfully with a valid key", async () => {
