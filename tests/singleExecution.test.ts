@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { singleExecution } from "../src/singleExecution";
+import { singleExecution } from "../src/lib/singleExecution";
 
 describe("singleExecution", () => {
     test("should only execute a task once with the same string key", async () => {

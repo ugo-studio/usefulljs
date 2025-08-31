@@ -363,6 +363,20 @@ export class ArrayUF<T = unknown> extends Array<T> {
         return this.filter(Boolean) as ArrayUF<T>;
     }
 
+    /**
+     * Clears all elements from the array, making it empty.
+     * This method modifies the array in place.
+     *
+     * @example
+     * const list = new ArrayUF([1, 2, 3]);
+     * list.clear();
+     * console.log(list.isEmpty); //-> true
+     * console.log(list.length); //-> 0
+     */
+    clear(): void {
+        this.length = 0;
+    }
+
     // *** Add Type Signature Overrides ***
 
     // Overrides the default return type of `Array.prototype.filter` to return `ArrayUF<T>`.

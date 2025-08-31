@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { ArrayUF } from "../src/array";
+import { ArrayUF } from "../src/lib/array";
 
 describe("ArrayUF Constructor and Core", () => {
     test("should create an instance from an array", () => {
@@ -65,7 +65,7 @@ describe("ArrayUF.unique", () => {
         const arr = new ArrayUF([{ id: 1 }, { id: 2 }, { id: 1 }]);
         const uniqueArr = arr.unique({ accessor: (item) => item.id });
         expect(uniqueArr.length).toBe(2);
-        expect(uniqueArr.map((i) => i.id)).toEqual([1, 2]);
+        expect(uniqueArr.map((i) => i.id)).toEqual(new ArrayUF([1, 2]));
     });
 
     test("should return an empty array if the original is empty", () => {
@@ -103,7 +103,7 @@ describe("ArrayUF.duplicates", () => {
         test("should get all occurrences of duplicated items", () => {
             const arr = new ArrayUF([1, 2, 1, 3, 1, 2]);
             const result = arr.duplicates({ mode: "all" });
-            expect(result.sort()).toEqual([1, 1, 1, 2, 2]);
+            expect(result.sort()).toEqual(new ArrayUF([1, 1, 1, 2, 2]));
         });
 
         test("should work with a custom accessor", () => {
@@ -111,13 +111,15 @@ describe("ArrayUF.duplicates", () => {
                 accessor: (i) => i.id,
                 mode: "all",
             });
-            expect(result.map((i) => i.val).sort()).toEqual([
-                "a",
-                "b",
-                "c",
-                "e",
-                "f",
-            ]);
+            expect(result.map((i) => i.val).sort()).toEqual(
+                new ArrayUF([
+                    "a",
+                    "b",
+                    "c",
+                    "e",
+                    "f",
+                ]),
+            );
         });
     });
 
@@ -125,7 +127,7 @@ describe("ArrayUF.duplicates", () => {
         test("should get only the first instance of each duplicated item", () => {
             const arr = new ArrayUF([1, 2, 1, 3, 1, 2]);
             const result = arr.duplicates({ mode: "first" });
-            expect(result.sort()).toEqual([1, 2]);
+            expect(result.sort()).toEqual(new ArrayUF([1, 2]));
         });
 
         test("should work with a custom accessor", () => {
@@ -133,7 +135,9 @@ describe("ArrayUF.duplicates", () => {
                 accessor: (i) => i.id,
                 mode: "first",
             });
-            expect(result.map((i) => i.val).sort()).toEqual(["a", "b"]);
+            expect(result.map((i) => i.val).sort()).toEqual(
+                new ArrayUF(["a", "b"]),
+            );
         });
     });
 
@@ -141,7 +145,7 @@ describe("ArrayUF.duplicates", () => {
         test("should get only the duplicates that appear after the first one", () => {
             const arr = new ArrayUF([1, 2, 1, 3, 1, 2]);
             const result = arr.duplicates({ mode: "subsequent" });
-            expect(result.sort()).toEqual([1, 1, 2]);
+            expect(result.sort()).toEqual(new ArrayUF([1, 1, 2]));
         });
 
         test("should work with a custom accessor", () => {
@@ -149,7 +153,9 @@ describe("ArrayUF.duplicates", () => {
                 accessor: (i) => i.id,
                 mode: "subsequent",
             });
-            expect(result.map((i) => i.val).sort()).toEqual(["c", "e", "f"]);
+            expect(result.map((i) => i.val).sort()).toEqual(
+                new ArrayUF(["c", "e", "f"]),
+            );
         });
     });
 });
@@ -214,7 +220,7 @@ describe("ArrayUF.mostFrequent", () => {
     test("should return multiple modes if they have the same frequency", () => {
         const arr = new ArrayUF([1, 1, 2, 2, 3]);
         const result = arr.mostFrequent((i) => i);
-        expect(result.sort()).toEqual([1, 1, 2, 2]);
+        expect(result.sort()).toEqual(new ArrayUF([1, 1, 2, 2]));
     });
 
     test("should return an empty array for an empty array", () => {
@@ -234,9 +240,9 @@ describe("ArrayUF.groupBy", () => {
         expect(Object.keys(grouped)).toEqual(["a", "b"]);
         expect(grouped["a"]).toBeInstanceOf(ArrayUF);
         expect(grouped["a"].length).toBe(2);
-        expect(grouped["a"].map((i) => i.value)).toEqual([1, 3]);
+        expect(grouped["a"].map((i) => i.value)).toEqual(new ArrayUF([1, 3]));
         expect(grouped["b"].length).toBe(1);
-        expect(grouped["b"].map((i) => i.value)).toEqual([2]);
+        expect(grouped["b"].map((i) => i.value)).toEqual(new ArrayUF([2]));
     });
 
     test("should return an empty object for an empty array", () => {
@@ -325,7 +331,18 @@ describe("ArrayUF.shuffle", () => {
 
 describe("ArrayUF.compact", () => {
     test("should remove all falsy values", () => {
-        const arr = new ArrayUF([0, 1, false, 2, "", 3, null, "a", undefined, NaN]);
+        const arr = new ArrayUF([
+            0,
+            1,
+            false,
+            2,
+            "",
+            3,
+            null,
+            "a",
+            undefined,
+            NaN,
+        ]);
         const compacted = arr.compact();
         expect(compacted).toEqual(new ArrayUF([1, 2, 3, "a"]));
     });
@@ -347,5 +364,27 @@ describe("ArrayUF.compact", () => {
         const arr = new ArrayUF([]);
         const compacted = arr.compact();
         expect(compacted.length).toBe(0);
+    });
+});
+describe("ArrayUF.clear", () => {
+    test("should remove all elements from the array", () => {
+        const arr = new ArrayUF([1, 2, 3, 4, 5]);
+        expect(arr.isNotEmpty).toBe(true);
+
+        arr.clear();
+
+        expect(arr.isEmpty).toBe(true);
+        expect(arr.length).toBe(0);
+        expect(arr.first).toBeUndefined();
+    });
+
+    test("should not fail on an already empty array", () => {
+        const arr = new ArrayUF([]);
+        expect(arr.isEmpty).toBe(true);
+
+        arr.clear();
+
+        expect(arr.isEmpty).toBe(true);
+        expect(arr.length).toBe(0);
     });
 });

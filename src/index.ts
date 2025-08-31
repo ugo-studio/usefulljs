@@ -1,7 +1,7 @@
-import * as array from "./array";
-import * as crypto from "./crypto";
-import * as retry from "./retry";
-import { singleExecution } from "./singleExecution";
+import * as array from "./lib/array";
+import * as crypto from "./lib/crypto";
+import * as retry from "./lib/retry";
+import { singleExecution } from "./lib/singleExecution";
 
 export default {
   singleExecution,

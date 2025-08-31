@@ -5,7 +5,7 @@ import {
   decryptString,
   encryptString,
   hashObject,
-} from "../src/crypto";
+} from "../src/lib/crypto";
 
 describe("encryptString and decryptString", () => {
     const plaintext = "Hello, usefulljs!";

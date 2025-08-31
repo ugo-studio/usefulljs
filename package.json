@@ -1,6 +1,6 @@
 {
   "name": "usefulljs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -12,30 +12,30 @@
       "require": "./dist/cjs/index.js"
     },
     "./array": {
-      "import": "./dist/esm/array.js",
-      "require": "./dist/cjs/array.js"
+      "import": "./dist/esm/lib/array.js",
+      "require": "./dist/cjs/lib/array.js"
     },
     "./crypto": {
-      "import": "./dist/esm/crypto.js",
-      "require": "./dist/cjs/crypto.js"
+      "import": "./dist/esm/lib/crypto.js",
+      "require": "./dist/cjs/lib/crypto.js"
     },
     "./retry": {
-      "import": "./dist/esm/retry.js",
-      "require": "./dist/cjs/retry.js"
+      "import": "./dist/esm/lib/retry.js",
+      "require": "./dist/cjs/lib/retry.js"
     },
     "./singleExecution": {
-      "import": "./dist/esm/singleExecution.js",
-      "require": "./dist/cjs/singleExecution.js"
+      "import": "./dist/esm/lib/singleExecution.js",
+      "require": "./dist/cjs/lib/singleExecution.js"
     }
   },
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "test": "bun test",
-    "script:dist": "node scripts/clear-dist-dir.js",
+    "script:clear-dist": "node scripts/clear-dist-dir.js",
     "script:exports": "node scripts/generate-exports.js",
     "build:esm": "tsc --module esnext --outDir dist/esm",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
-    "build": "npm run script:dist && npm run script:exports && npm run build:esm && npm run build:cjs",
+    "build": "npm run script:clear-dist && npm run script:exports && npm run build:esm && npm run build:cjs",
     "prepublishOnly": "npm run build",
     "pub": "npm publish --access=public"
   },
