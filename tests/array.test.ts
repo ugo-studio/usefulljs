@@ -63,7 +63,7 @@ describe("ArrayUF.unique", () => {
 
     test("should return unique elements using a custom accessor", () => {
         const arr = new ArrayUF([{ id: 1 }, { id: 2 }, { id: 1 }]);
-        const uniqueArr = arr.unique({ accessor: (item) => item.id });
+        const uniqueArr = arr.unique((item) => item.id);
         expect(uniqueArr.length).toBe(2);
         expect(uniqueArr.map((i) => i.id)).toEqual(new ArrayUF([1, 2]));
     });

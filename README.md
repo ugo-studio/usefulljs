@@ -20,6 +20,9 @@ Built with TypeScript, it offers full type safety and is designed for seamless i
   - `retry`: Automatically retries a failing async task with a configurable exponential backoff strategy, perfect for handling unreliable network requests.
 - **Powerful Array Utilities**:
   - `ArrayUF`: An extended `Array` class that supercharges your data manipulations with convenient getters and powerful methods.
+- **Object Utilities**:
+  - `areEqual`, `areNotEqual`: Deeply compare any JavaScript values.
+  - `toCanonicalString`: Create a deterministic string representation of any JavaScript value.
 - **Secure Cryptography**:
   - `encryptString` / `decryptString`: Encrypt and decrypt strings using AES-256-GCM with a time-to-live (TTL) to prevent replay attacks.
   - `hashObject`: Create a deterministic SHA-256 hash of any JavaScript value, including complex nested objects, Maps, Sets, and even structures with circular references.
@@ -49,9 +52,10 @@ bun add usefulljs
 
 A quick look at the utilities this package provides. Click on any utility to see its details.
 
-- [**`singleExecution`**](#singleExecutiontresulttaskfn-key)
+- [**`singleExecution`**](#singleexecutiontresulttaskfn-key)
 - [**`retry`**](#retrytresulttaskfn-options)
 - [**`ArrayUF`**](#arrayuft)
+- [**`Object Utilities`**](#object-utilities)
 - [**`Cryptography`**](#cryptography)
 
 ---
@@ -204,17 +208,17 @@ const chunks = numbers.chunk(2);
 console.log(chunks); // ArrayUF[ArrayUF[1, 2], ArrayUF[3, 4], ArrayUF[5]]
 
 // compact()
-const mixed = new ArrayUF([0, 1, false, 2, '', 3, null]);
+const mixed = new ArrayUF([0, 1, false, 2, "", 3, null]);
 const compacted = mixed.compact();
 console.log(compacted); // ArrayUF[1, 2, 3]
 
 // groupBy()
 const users = new ArrayUF([
-  { name: 'Alice', department: 'HR' },
-  { name: 'Bob', department: 'Engineering' },
-  { name: 'Charlie', department: 'HR' }
+  { name: "Alice", department: "HR" },
+  { name: "Bob", department: "Engineering" },
+  { name: "Charlie", department: "HR" },
 ]);
-const grouped = users.groupBy(user => user.department);
+const grouped = users.groupBy((user) => user.department);
 // grouped is:
 // {
 //   HR: ArrayUF[{ name: 'Alice', ... }, { name: 'Charlie', ... }],
@@ -224,6 +228,19 @@ const grouped = users.groupBy(user => user.department);
 // shuffle()
 const shuffled = numbers.shuffle();
 console.log(shuffled); // e.g., ArrayUF[3, 5, 1, 4, 2]
+
+// unique()
+const withDuplicates = new ArrayUF([1, 2, 2, 3, 1, 4]);
+const uniqueItems = withDuplicates.unique();
+console.log(uniqueItems); // ArrayUF[1, 2, 3, 4]
+
+const usersWithDupes = new ArrayUF([
+  { id: 1, name: "Alice" },
+  { id: 2, name: "Bob" },
+  { id: 1, name: "Alicia" },
+]);
+const uniqueUsers = usersWithDupes.unique((user) => user.id);
+console.log(uniqueUsers); // ArrayUF[{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }]
 
 // Method Chaining
 const products = new ArrayUF([
@@ -239,6 +256,125 @@ const result = products
   .sort((a, b) => a.price - b.price).first;
 
 console.log(result); // { category: 'A', price: 10 }
+```
+
+</details>
+
+---
+
+### Object Utilities
+
+Provides functions for comparing and serializing JavaScript objects.
+
+#### `toCanonicalString(value)`
+
+Converts any JavaScript value into a stable, canonical string representation. This is the foundation for `areEqual` and is also useful for creating consistent hashes or keys from objects.
+
+- **`value`**: `any` - The value to convert.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { toCanonicalString } from "usefulljs/object";
+
+const obj1 = { b: 2, a: 1 };
+const str1 = toCanonicalString(obj1); // '{"a":1,"b":2}'
+
+const obj2 = { a: 1, b: 2 };
+const str2 = toCanonicalString(obj2); // '{"a":1,"b":2}'
+
+console.log(str1 === str2); // true
+```
+
+</details>
+
+#### `areEqual(...values)`
+
+Checks if all given values are deeply equal by comparing their canonical string representations.
+
+- **`...values`**: `any[]` - The values to compare.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { areEqual } from "usefulljs/object";
+
+const obj1 = { a: 1, b: { c: 2 } };
+const obj2 = { b: { c: 2 }, a: 1 };
+const obj3 = { a: 1, b: { c: 3 } };
+
+console.log(areEqual(obj1, obj2)); // true
+console.log(areEqual(obj1, obj3)); // false
+console.log(areEqual("test", "test", "test")); // true
+```
+
+</details>
+
+#### `areNotEqual(...values)`
+
+Checks if any of the given values are not deeply equal. It is the logical opposite of `areEqual`.
+
+- **`...values`**: `any[]` - The values to compare.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { areNotEqual } from "usefulljs/object";
+
+const obj1 = { a: 1 };
+const obj2 = { a: 2 };
+
+console.log(areNotEqual(obj1, obj2)); // true
+console.log(areNotEqual(obj1, obj1)); // false
+```
+
+</details>
+
+
+
+#### - `getValue`: Safely access nested properties of an object.
+
+#### `pick(obj, keys)`
+
+Creates a new object composed of the picked object properties.
+
+- **`obj`**: `object` - The source object.
+- **`keys`**: `string[]` - The properties to pick.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { pick } from "usefulljs/object";
+
+const obj = { a: 1, b: 'hello', c: true };
+const picked = pick(obj, ['a', 'c']);
+
+console.log(picked); // { a: 1, c: true }
+```
+
+</details>
+
+#### `omit(obj, keys)`
+
+Creates a new object with properties from the source object that are not omitted.
+
+- **`obj`**: `object` - The source object.
+- **`keys`**: `string[]` - The properties to omit.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { omit } from "usefulljs/object";
+
+const obj = { a: 1, b: 'hello', c: true };
+const omitted = omit(obj, ['b']);
+
+console.log(omitted); // { a: 1, c: true }
 ```
 
 </details>
@@ -378,6 +514,17 @@ try {
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue.
+
+1.  Fork the repository.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+ributions are welcome! Please feel free to submit a pull request or open an issue.
 
 1.  Fork the repository.
 2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).

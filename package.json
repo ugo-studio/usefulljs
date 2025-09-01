@@ -1,6 +1,6 @@
 {
   "name": "usefulljs",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -18,6 +18,10 @@
     "./crypto": {
       "import": "./dist/esm/lib/crypto.js",
       "require": "./dist/cjs/lib/crypto.js"
+    },
+    "./object": {
+      "import": "./dist/esm/lib/object.js",
+      "require": "./dist/cjs/lib/object.js"
     },
     "./retry": {
       "import": "./dist/esm/lib/retry.js",
