@@ -163,31 +163,31 @@ describe("ArrayUF.duplicates", () => {
 describe("ArrayUF.middle", () => {
     test("should find the single middle item in an odd-length array", () => {
         const arr = new ArrayUF([10, 20, 5, 30, 15]);
-        const middle = arr.middle();
+        const middle = arr.middle;
         expect(middle).toEqual(new ArrayUF([5]));
     });
 
     test("should find the two middle items in an even-length array", () => {
         const evenArr = new ArrayUF([10, 20, 5, 30]);
-        const middle = evenArr.middle();
+        const middle = evenArr.middle;
         expect(middle).toEqual(new ArrayUF([20, 5]));
     });
 
     test("should return an empty array for an empty input array", () => {
         const arr = new ArrayUF([]);
-        const middle = arr.middle();
+        const middle = arr.middle;
         expect(middle.length).toBe(0);
     });
 
     test("should return the single item for an array with one element", () => {
         const arr = new ArrayUF([42]);
-        const middle = arr.middle();
+        const middle = arr.middle;
         expect(middle).toEqual(new ArrayUF([42]));
     });
 
     test("should return both items for an array with two elements", () => {
         const arr = new ArrayUF([1, 2]);
-        const middle = arr.middle();
+        const middle = arr.middle;
         expect(middle).toEqual(new ArrayUF([1, 2]));
     });
 });

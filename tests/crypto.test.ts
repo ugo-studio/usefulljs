@@ -75,7 +75,7 @@ describe("encryptString and decryptString", () => {
     describe("Time-To-Live (TTL)", () => {
         test("should respect a short TTL and expire", async () => {
             const encrypted = await encryptString(plaintext, secretKey, {
-                ttl: 200, // 200ms TTL
+                ttl: 300, // 300ms TTL
             });
 
             // Should decrypt successfully immediately

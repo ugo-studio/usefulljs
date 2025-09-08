@@ -111,17 +111,17 @@ export class ArrayUF<T = unknown> extends Array<T> {
      * @example
      * // For an array with an odd length
      * const oddList = new ArrayUF(['a', 'b', 'c', 'd', 'e']);
-     * console.log(oddList.middle()); // Returns ArrayUF['c']
+     * console.log(oddList.middle); // Returns ArrayUF['c']
      *
      * // For an array with an even length
      * const evenList = new ArrayUF([10, 20, 30, 40]);
-     * console.log(evenList.middle()); // Returns ArrayUF[20, 30]
+     * console.log(evenList.middle); // Returns ArrayUF[20, 30]
      *
      * // For an empty array
      * const emptyList = new ArrayUF([]);
-     * console.log(emptyList.middle()); // Returns ArrayUF[]
+     * console.log(emptyList.middle); // Returns ArrayUF[]
      */
-    middle(): ArrayUF<T> {
+    get middle(): ArrayUF<T> {
         if (this.length === 0) {
             return new ArrayUF<T>();
         }
