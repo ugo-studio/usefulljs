@@ -1,8 +1,8 @@
-import * as array from "./lib/array";
-import * as crypto from "./lib/crypto";
-import * as object from "./lib/object";
-import * as retry from "./lib/retry";
-import { singleExecution } from "./lib/singleExecution";
+import * as array from "./lib/array.js";
+import * as crypto from "./lib/crypto.js";
+import * as object from "./lib/object.js";
+import * as retry from "./lib/retry.js";
+import { singleExecution } from "./lib/singleExecution.js";
 
 export default {
   singleExecution,

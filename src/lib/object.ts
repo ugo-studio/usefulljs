@@ -1,4 +1,4 @@
-import { createCanonicalString } from "../utils";
+import { createCanonicalString } from "../utils.js";
 
 /**
  * Converts any JavaScript value to a deterministic, canonical string representation.

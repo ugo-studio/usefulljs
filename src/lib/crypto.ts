@@ -1,4 +1,4 @@
-import { createCanonicalString } from "../utils";
+import { createCanonicalString } from "../utils.js";
 
 // --- Custom Error Handling ---
 export type CryptoErrorCode =
