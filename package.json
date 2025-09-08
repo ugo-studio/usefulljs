@@ -59,7 +59,7 @@
   "homepage": "https://github.com/ugo-studio/usefulljs/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ugo-studio/usefulljs.git"
+    "url": "git+https://github.com/ugo-studio/usefulljs.git"
   },
   "bugs": {
     "url": "https://github.com/ugo-studio/usefulljs/issues"

@@ -7,6 +7,25 @@ import {
   hashObject,
 } from "../src/lib/crypto";
 
+// Helpers for base64url in tests
+function fromBase64Url(s: string): Uint8Array {
+    let b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = (4 - (b64.length % 4)) & 3;
+    if (pad) b64 += "=".repeat(pad);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+function toBase64Url(bytes: Uint8Array): string {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(
+        /=+$/g,
+        "",
+    );
+}
+
 describe("encryptString and decryptString", () => {
     const plaintext = "Hello, usefulljs!";
     const secretKey = "a-very-secret-key";
@@ -15,6 +34,11 @@ describe("encryptString and decryptString", () => {
         const encrypted = await encryptString(plaintext, secretKey);
         const decrypted = await decryptString(encrypted, secretKey);
         expect(decrypted).toBe(plaintext);
+    });
+
+    test("token should be URL-safe (base64url)", async () => {
+        const encrypted = await encryptString(plaintext, secretKey);
+        expect(encrypted).not.toMatch(/[+=/]/); // no '+', '/', or '=' padding
     });
 
     test("should fail to decrypt with a wrong secret key", async () => {
@@ -29,33 +53,42 @@ describe("encryptString and decryptString", () => {
         );
     });
 
-    test("should fail to decrypt tampered data", async () => {
+    test("should fail to decode invalid base64url data", async () => {
         const encrypted = await encryptString(plaintext, secretKey);
-        const tampered = encrypted.slice(0, -1) + "a"; // Alter the last character
+        // Introduce an invalid base64url character to force a decode error
+        const tampered = encrypted.slice(0, -1) + "*";
 
         const promise = decryptString(tampered, secretKey);
         await expect(promise).rejects.toThrow(CryptoError);
         await expect(promise).rejects.toHaveProperty("code", "INVALID_DATA");
     });
 
-    test("should fail with DECRYPTION_FAILED for tampered ciphertext", async () => {
+    test("should fail with DECRYPTION_FAILED for tampered ciphertext (bit flip at end)", async () => {
         const encrypted = await encryptString(plaintext, secretKey);
 
-        // Decode the payload
-        const decodedB64 = decodeURIComponent(encrypted);
-        const binaryString = atob(decodedB64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+        // Decode, flip last byte (ciphertext/tag), re-encode
+        const bytes = fromBase64Url(encrypted);
+        bytes[bytes.length - 1] ^= 0xff;
+        const tamperedEncrypted = toBase64Url(bytes);
+
+        const promise = decryptString(tamperedEncrypted, secretKey);
+        await expect(promise).rejects.toThrow(CryptoError);
+        await expect(promise).rejects.toHaveProperty(
+            "code",
+            "DECRYPTION_FAILED",
+        );
+    });
+
+    test("should fail with DECRYPTION_FAILED when header is tampered", async () => {
+        const encrypted = await encryptString(plaintext, secretKey);
+
+        const bytes = fromBase64Url(encrypted);
+        // Flip a bit in the header (index 3 is flags in v1 header)
+        if (bytes.length < 4) {
+            throw new Error("Token too short for header tamper test");
         }
-
-        // Tamper with the last byte of the ciphertext
-        bytes[bytes.length - 1] = bytes[bytes.length - 1] ^ 0xff; // Flip all bits
-
-        // Re-encode
-        const tamperedBinaryString = String.fromCharCode(...bytes);
-        const tamperedB64 = btoa(tamperedBinaryString);
-        const tamperedEncrypted = encodeURIComponent(tamperedB64);
+        bytes[3] ^= 0x01;
+        const tamperedEncrypted = toBase64Url(bytes);
 
         const promise = decryptString(tamperedEncrypted, secretKey);
         await expect(promise).rejects.toThrow(CryptoError);
@@ -101,12 +134,45 @@ describe("encryptString and decryptString", () => {
         });
     });
 
-    describe("PBKDF2 Iterations", () => {
-        test("should encrypt and decrypt successfully with custom iterations", async () => {
-            // Using a lower iteration count for test speed.
-            // WARNING: In production, use the default or higher.
-            const customIterations = 1000;
+    describe("KDF and algorithm options (embedded in token)", () => {
+        test("should encrypt/decrypt with HKDF and AES-128-GCM", async () => {
             const encrypted = await encryptString(plaintext, secretKey, {
+                kdf: "HKDF",
+                keyLengthBits: 128,
+                ttl: null,
+            });
+            const decrypted = await decryptString(encrypted, secretKey);
+            expect(decrypted).toBe(plaintext);
+        });
+
+        test("should encrypt/decrypt with raw key (kdf: NONE) and AES-128-GCM", async () => {
+            // 16-byte UTF-8 key for AES-128
+            const raw128 = "0123456789abcdef";
+            const encrypted = await encryptString(plaintext, raw128, {
+                kdf: "NONE",
+                keyLengthBits: 128,
+                ttl: null,
+            });
+            const decrypted = await decryptString(encrypted, raw128);
+            expect(decrypted).toBe(plaintext);
+        });
+
+        test("should encrypt/decrypt with raw key (kdf: NONE) and AES-256-GCM", async () => {
+            // 32-byte UTF-8 key for AES-256
+            const raw256 = "0123456789abcdef0123456789abcdef";
+            const encrypted = await encryptString(plaintext, raw256, {
+                kdf: "NONE",
+                keyLengthBits: 256,
+                ttl: null,
+            });
+            const decrypted = await decryptString(encrypted, raw256);
+            expect(decrypted).toBe(plaintext);
+        });
+
+        test("should encrypt and decrypt successfully with custom PBKDF2 iterations", async () => {
+            const customIterations = 1000; // lower for test speed
+            const encrypted = await encryptString(plaintext, secretKey, {
+                kdf: "PBKDF2",
                 pbkdf2Iterations: customIterations,
             });
             const decrypted = await decryptString(encrypted, secretKey);
@@ -184,8 +250,14 @@ describe("hashObject with advanced types", () => {
     });
 
     test("should produce a consistent hash for Maps with different insertion orders", async () => {
-        const map1 = new Map([["a", 1], ["b", 2]]);
-        const map2 = new Map([["b", 2], ["a", 1]]);
+        const map1 = new Map([
+            ["a", 1],
+            ["b", 2],
+        ]);
+        const map2 = new Map([
+            ["b", 2],
+            ["a", 1],
+        ]);
         const hash1 = await hashObject(map1);
         const hash2 = await hashObject(map2);
         expect(hash1).toBe(hash2);
