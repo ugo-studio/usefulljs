@@ -16,7 +16,7 @@ Built with TypeScript, it offers full type safety and is designed for seamless i
 ## Features
 
 - Robust Async Control:
-  - `singleExecution`: Guarantees that an async function is only executed once at a time for a given key, preventing race conditions and redundant operations.
+  - `singleExec`: Guarantees that an async function is only executed once at a time for a given key, preventing race conditions and redundant operations.
   - `retry`: Automatically retries a failing async task with a configurable exponential backoff strategy, perfect for handling unreliable network requests.
 - Powerful Array Utilities:
   - `ArrayUF`: An extended `Array` class that supercharges your data manipulations with convenient getters and powerful methods.
@@ -44,7 +44,7 @@ bun add usefulljs
 
 A quick look at the utilities this package provides. Click on any utility to see its details.
 
-- [**`singleExecution`**](#singleexecutiontresulttaskfn-key)
+- [**`singleExec`**](#singleexectresulttaskfn-key)
 - [**`retry`**](#retrytresulttaskfn-options)
 - [**`ArrayUF`**](#arrayuft)
 - [**`Object Utilities`**](#object-utilities)
@@ -52,7 +52,7 @@ A quick look at the utilities this package provides. Click on any utility to see
 
 ---
 
-### `singleExecution<TResult>(taskFn, [key])`
+### `singleExec<TResult>(taskFn, [key])`
 
 Ensures that an asynchronous task is only executed once at a time for a given unique key. If called again with the same key while the task is running, it returns the promise of the existing task.
 
@@ -63,10 +63,10 @@ Ensures that an asynchronous task is only executed once at a time for a given un
 <summary>Example</summary>
 
 ```ts
-import { singleExecution } from "usefulljs/singleExecution";
+import { singleExec } from "usefulljs/singleExec";
 
 async function fetchUser(userId: string) {
-  return singleExecution(
+  return singleExec(
     () => {
       console.log(`Fetching user ${userId}...`);
       // Imagine this is an API call
@@ -80,6 +80,90 @@ async function fetchUser(userId: string) {
 
 // Both calls will trigger only one "Fetching user 123..." log
 Promise.all([fetchUser("123"), fetchUser("123")]);
+```
+
+</details>
+
+---
+
+### SingleExecution (class)
+
+A SingleFlight-style executor that deduplicates concurrent async work by a key. Concurrent calls with the same key share a single in-flight Promise and resolve/reject together. Once settled, the entry is removed so future calls re-execute.
+
+Constructor:
+
+- `new SingleExecution(options?)`
+  - `options.scope?: string` — Optional namespace that becomes part of the key, letting you isolate keys across instances.
+
+Methods:
+
+- `run(taskFn, [key])` → `Promise<TResult>`
+  - `taskFn`: `() => Promise<TResult>`
+  - `key?`: `SerializableKey` — Any value representable by `toCanonicalString`. If omitted, `taskFn.toString()` is used.
+- `size` (getter) → `number` — Number of in-flight entries.
+- `clear()` → `void` — Clears the in-flight map (useful for tests or shutdown).
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { SingleExecution } from "usefulljs/singleExec";
+
+const single = new SingleExecution({ scope: "api" });
+
+// Deduplicate concurrent fetches for the same user
+function fetchUser(userId: string) {
+  return single.run(
+    () => Promise.resolve({ id: userId }), // e.g., api.get(`/users/${userId}`)
+    `user:${userId}`
+  );
+}
+
+await Promise.all([fetchUser("1"), fetchUser("1")]); // Executes once
+
+// Object keys are canonicalized (order-agnostic)
+await Promise.all([
+  single.run(() => Promise.resolve("ok"), { a: 1, b: 2 }),
+  single.run(() => Promise.resolve("ok"), { b: 2, a: 1 }),
+]); // single execution
+
+// Isolated instances: same key in different instances run independently
+const singleA = new SingleExecution({ scope: "A" });
+const singleB = new SingleExecution({ scope: "B" });
+await Promise.all([
+  singleA.run(() => Promise.resolve("A"), "key"),
+  singleB.run(() => Promise.resolve("B"), "key"),
+]);
+```
+
+</details>
+
+---
+
+### singleExecutionService
+
+The shared, application-level instance of `SingleExecution` used by `singleExec`. Use when you want to manage the shared instance (e.g., for clearing the the cache with `.clear()`).
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { singleExecutionService } from "usefulljs/singleExec";
+
+// Deduplicate concurrent calls using the shared service
+async function fetchConfig() {
+  return singleExecutionService.run(
+    () =>
+      Promise.resolve({
+        /* config */
+      }),
+    "config"
+  );
+}
+
+await Promise.all([fetchConfig(), fetchConfig()]); // Executes once
+
+singleExecutionService.clear(); // Clears the shared, application-level caches
 ```
 
 </details>

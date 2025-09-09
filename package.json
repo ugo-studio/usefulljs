@@ -1,6 +1,6 @@
 {
   "name": "usefulljs",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -27,9 +27,9 @@
       "import": "./dist/esm/lib/retry.js",
       "require": "./dist/cjs/lib/retry.js"
     },
-    "./singleExecution": {
-      "import": "./dist/esm/lib/singleExecution.js",
-      "require": "./dist/cjs/lib/singleExecution.js"
+    "./singleExec": {
+      "import": "./dist/esm/lib/singleExec.js",
+      "require": "./dist/cjs/lib/singleExec.js"
     }
   },
   "scripts": {

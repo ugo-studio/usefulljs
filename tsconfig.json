@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2024",
+    "lib": ["es2024", "dom"],
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true
+    "declaration": true,
+    "allowImportingTsExtensions": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
