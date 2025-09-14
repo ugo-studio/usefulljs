@@ -410,5 +410,17 @@ export class ArrayUF<T = unknown> extends Array<T> {
         return super.concat(...items) as ArrayUF<T>;
     }
 
+    // Overrides the default return type of `Array.prototype.from` to return `ArrayUF<Element>`.
+    static from<Element>(
+        iterable: Iterable<Element> | ArrayLike<Element>,
+    ): ArrayUF<Element> {
+        return super.from(iterable) as ArrayUF<Element>;
+    }
+
+    // Overrides the default return type of `Array.prototype.of` to return `ArrayUF<T>`.
+    static of<T>(...items: T[]): ArrayUF<T> {
+        return super.of(...items) as ArrayUF<T>;
+    }
+
     // *** End Of Signature Overrides ***
 }
