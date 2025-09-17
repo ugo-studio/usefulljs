@@ -1,3 +1,11 @@
+function isTypedArray(obj: object) {
+    const hasLength = "length" in obj && typeof obj.length === "number" &&
+        obj.length >= 0;
+    const hasJoin = "join" in obj && typeof obj.join === "function";
+    const hasForEach = "forEach" in obj && typeof obj.forEach === "function";
+    return hasLength && hasJoin && hasForEach;
+}
+
 /**
  * Creates a deterministic, canonical string representation of any JavaScript value.
  * This is used internally by `hashObject` to ensure consistent hashing.
@@ -65,6 +73,15 @@ export const createCanonicalString = (
                 createCanonicalString(item, new Set(visited))
             );
             result = `[${arrayItems.join(",")}]`;
+        } else if (value instanceof DataView) {
+            const array = new Uint8Array(value.buffer);
+            result = `[DataView]:[${array.join(",")}]`;
+        } else if (value instanceof ArrayBuffer) {
+            const array = new Uint8Array(value);
+            result = `[ArrayBuffer]:[${array.join(",")}]`;
+        } else if (isTypedArray(value) && value.constructor) {
+            const name = value.constructor.name;
+            result = `[${name}]:[${value.join(",")}]`;
         } else {
             // Handle plain objects
             const sortedKeys = Object.keys(value).sort();

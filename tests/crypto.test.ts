@@ -4,6 +4,7 @@ import {
   CryptoError,
   decryptString,
   encryptString,
+  hash,
   hashObject,
 } from "../src/lib/crypto";
 
@@ -181,6 +182,32 @@ describe("encryptString and decryptString", () => {
     });
 });
 
+describe("hash", () => {
+    test("should calculate the correct SHA-256 hash by default", async () => {
+        const text = "hello world";
+        const data = new TextEncoder().encode(text);
+        const expectedHash = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+        const actualHash = await hash(data);
+        expect(actualHash).toBe(expectedHash);
+    });
+
+    test("should calculate the correct SHA-512 hash", async () => {
+        const text = "hello world";
+        const data = new TextEncoder().encode(text);
+        const expectedHash = "309ecc489c12d6eb4cc40f50c902f2b4d0ed77ee511a7c7a9bcd3ca86d4cd86f989dd35bc5ff499670da34255b45b0cfd830e81f605dcf7dc5542e93ae9cd76f";
+        const actualHash = await hash(data, "SHA-512");
+        expect(actualHash).toBe(expectedHash);
+    });
+
+    test("should produce different hashes for different data", async () => {
+        const data1 = new TextEncoder().encode("data1");
+        const data2 = new TextEncoder().encode("data2");
+        const hash1 = await hash(data1);
+        const hash2 = await hash(data2);
+        expect(hash1).not.toBe(hash2);
+    });
+});
+
 describe("hashObject", () => {
     test("should produce a consistent hash for the same object with different key orders", async () => {
         const obj1 = { a: 1, b: { c: 2, d: 3 } };
@@ -199,6 +226,22 @@ describe("hashObject", () => {
         const hash1 = await hashObject(obj1);
         const hash2 = await hashObject(obj2);
         expect(hash1).not.toBe(hash2);
+    });
+
+    test("should use SHA-256 by default", async () => {
+        const obj = { a: 1, b: 2 };
+        const hash1 = await hashObject(obj);
+        const hash2 = await hashObject(obj, "SHA-256");
+        expect(hash1).toBe(hash2);
+    });
+
+    test("should produce different hashes for the same object with different algorithms", async () => {
+        const obj = { a: 1, b: 2 };
+        const hash1 = await hashObject(obj, "SHA-256");
+        const hash2 = await hashObject(obj, "SHA-512");
+        expect(hash1).not.toBe(hash2);
+        expect(hash1).toHaveLength(64);
+        expect(hash2).toHaveLength(128);
     });
 
     test("should handle various data types correctly", async () => {
